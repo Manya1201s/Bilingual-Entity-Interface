@@ -39,6 +39,7 @@ Then open http://localhost:8501. The first NER run downloads the model
 .venv\Scripts\python tests\test_regressions.py
 .venv\Scripts\python tests\test_excel.py
 .venv\Scripts\python tests\test_input_source.py
+.venv\Scripts\python tests\test_navigation.py
 ```
 
 - `test_input_source.py` checks that an uploaded document always takes
@@ -109,10 +110,11 @@ Then open http://localhost:8501. The first NER run downloads the model
    goes through the normal NER and alignment steps.
 2. **Sentences**: split on `. ! ? । ॥` and newlines, but not after titles
    such as Dr./डॉ. or initials such as "A. P. J.".
-3. **NER model**, chosen by the input language and the "NER Model"
-   option: language-specific → that language's
-   BiLSTM-CRF trained from scratch; baseline (default) → the multilingual
-   `Davlan/xlm-roberta-base-ner-hrl`.
+3. **NER model** (fixed per workflow, shown as static text, no dropdown):
+   Monolingual NER Extraction uses the *language-specific trained models*:
+   the selected input language's BiLSTM-CRF trained from scratch.
+   Bilingual NER Extraction uses the *baseline multilingual model*
+   `Davlan/xlm-roberta-base-ner-hrl` for both sentences.
    If a trained model folder is missing, the app falls back to the baseline
    and says so.
 4. **Merging**: word pieces ("Pri" + "ya") are joined, and spans cut in the
@@ -333,8 +335,9 @@ Baseline XLM-R (Auto Detect route):
   language's model; both sentences are entered by the user (nothing is
   translated). For alignment, the English side is always passed first, so
   either input order gives the same matches.
-- "NER Model" picks the language-specific BiLSTM-CRF models or the XLM-R
-  baseline (the default).
+- Neither workflow has a model dropdown. Sections 01-03 show "Language-
+  specific trained models" (the input language's BiLSTM-CRF); section 04
+  shows "Baseline multilingual model" (XLM-R for both sentences).
 - The sentence preview names the model that will be used, shows the
   detected script, and warns if the choice clearly contradicts the text
   (e.g. English selected for Devanagari text).

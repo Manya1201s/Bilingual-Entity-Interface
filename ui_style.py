@@ -178,6 +178,20 @@ APP_CSS = """
         box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.35);
     }
 
+    /* Fixed NER model shown as static text (no dropdown). The top margin
+       matches a widget label, so it lines up with the selector beside it. */
+    .static-field {
+        margin-top: 1.9rem;
+        padding: 0.55rem 0.8rem;
+        border: 1px solid #1f3149;
+        border-radius: 0.5rem;
+        background: #0f1a2b;
+        color: #cfe0f2;
+        font-size: 0.95rem;
+        cursor: default;
+        user-select: text;
+    }
+
     [data-testid="stDataFrame"] {
         border: 1px solid #1f3149;
         border-radius: 10px;

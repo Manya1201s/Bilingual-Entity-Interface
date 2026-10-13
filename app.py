@@ -245,13 +245,6 @@ LANGUAGE_HELP = (
     "selects the model trained for that language."
 )
 
-ENGINE_HELP = (
-    "Language-specific: a BiLSTM-CRF model trained for this project for "
-    "each language. Baseline: one multilingual XLM-R model for all "
-    "languages (the default)."
-)
-
-
 def language_selector(key: str, label: str, options=NER_LANGUAGES) -> str:
     """Input-language dropdown used by the NER sections."""
     return st.selectbox(
@@ -262,14 +255,17 @@ def language_selector(key: str, label: str, options=NER_LANGUAGES) -> str:
     )
 
 
-def engine_selector(key: str) -> str:
-    """NER model choice used by every NER extraction section."""
-    return st.selectbox(
-        "NER Model",
-        NER_ENGINES,
-        key=key,
-        help=ENGINE_HELP,
+def fixed_model(engine: str) -> str:
+    """
+    Show the NER model a workflow uses as static text (no dropdown) and
+    return that NER_ENGINES value, so the text always names the model that
+    is actually used.
+    """
+    st.markdown(
+        f'<div class="static-field">{engine}</div>',
+        unsafe_allow_html=True,
     )
+    return engine
 
 
 def language_mismatch(selected_language: str, script: str) -> bool:
@@ -1721,861 +1717,912 @@ st.markdown(
 
 
 # ============================================================
-# INPUT
+# NER EXTRACTION: WORKFLOW NAVIGATION
 # ============================================================
+# Both workflows live on this page as tabs. The cards switch the active
+# tab through its session-state key; both tabs stay rendered, so typed
+# text, uploads and results are kept when switching.
 
-st.header("01 · Input")
+WORKFLOW_TABS = ["Monolingual NER Extraction", "Bilingual NER Extraction"]
+WORKFLOW_CARDS = [
+    (WORKFLOW_TABS[0], ":material/article:", "open_monolingual",
+     "Extract PER, LOC and ORG entities from English, Hindi or Marathi "
+     "text or documents."),
+    (WORKFLOW_TABS[1], ":material/compare_arrows:", "open_bilingual",
+     "Extract entities from two corresponding sentences in different "
+     "languages and align them."),
+]
 
-language_col, engine_col = st.columns(2)
 
-with language_col:
-    ner_language = language_selector("ner_language", "Input Language")
+def open_workflow(name: str):
+    """on_click: show the chosen workflow's tab."""
+    st.session_state["ner_workflow"] = name
 
-with engine_col:
-    ner_engine = engine_selector("ner_engine")
 
-tab_text, tab_file = st.tabs([
-    "Enter Text",
-    "Upload Document",
-])
+st.header("NER Extraction")
 
-with tab_text:
-    manual_text = st.text_area(
-        f"Enter one or more {ner_language} sentences",
-        placeholder=EXAMPLE_SENTENCES[ner_language],
-        height=170,
-        key="manual_text",
+active_workflow = st.session_state.get("ner_workflow", WORKFLOW_TABS[0])
+
+for column, (name, icon, key, description) in zip(st.columns(2), WORKFLOW_CARDS):
+    with column, st.container(border=True):
+        st.markdown(f"**{name}**")
+        st.caption(description)
+        st.button(
+            f"Open {name}",
+            key=key,
+            icon=icon,
+            type="primary" if name == active_workflow else "secondary",
+            on_click=open_workflow,
+            args=(name,),
+            width="stretch",
+        )
+
+monolingual_tab, bilingual_tab = st.tabs(
+    WORKFLOW_TABS,
+    key="ner_workflow",
+    default=WORKFLOW_TABS[0],
+    on_change="rerun",
+)
+
+
+with monolingual_tab:
+    # ============================================================
+    # INPUT
+    # ============================================================
+
+    st.header("01 · Input")
+
+    language_col, engine_col = st.columns(2)
+
+    with language_col:
+        ner_language = language_selector("ner_language", "Input Language")
+
+    with engine_col:
+        # Fixed: the monolingual workflow uses the language-specific models.
+        ner_engine = fixed_model(TRAINED_ENGINE)
+
+    tab_text, tab_file = st.tabs([
+        "Enter Text",
+        "Upload Document",
+    ])
+
+    with tab_text:
+        manual_text = st.text_area(
+            f"Enter one or more {ner_language} sentences",
+            placeholder=EXAMPLE_SENTENCES[ner_language],
+            height=170,
+            key="manual_text",
+        )
+
+
+    with tab_file:
+        uploaded = st.file_uploader(
+            "Upload a TXT, DOCX, PDF, CSV or Excel file",
+            type=["txt", "docx", "pdf", "csv", "xlsx", "xls"],
+            help=(
+                "Scanned (image-only) PDFs are not supported. In CSV and Excel "
+                "files, the first row is read as column headers."
+            ),
+        )
+
+        csv_column = None
+        excel_sheet, excel_column = ALL_SHEETS, ALL_COLUMNS
+
+        if uploaded is not None and uploaded.name.lower().endswith(EXCEL_TYPES):
+            try:
+                workbook = read_excel_bytes(uploaded.getvalue(), uploaded.name)
+                non_empty = {name: df for name, df in workbook.items() if not df.empty}
+
+                if not non_empty:
+                    st.info("This workbook has no data rows.")
+
+                else:
+                    sheet_col, column_col = st.columns(2)
+
+                    with sheet_col:
+                        excel_sheet = st.selectbox(
+                            "Sheet",
+                            ([ALL_SHEETS] if len(non_empty) > 1 else []) + list(non_empty),
+                            key="excel_sheet",
+                            help="Process one sheet or every sheet with data.",
+                        )
+
+                    sheet_columns = list(dict.fromkeys(
+                        column
+                        for name, df in non_empty.items()
+                        if excel_sheet in (ALL_SHEETS, name)
+                        for column in df.columns
+                    ))
+                    column_options = [ALL_COLUMNS] + sheet_columns
+                    # Sheets can have different layouts, so a named text column
+                    # is only pre-selected for a single sheet.
+                    default_column = (
+                        ALL_COLUMNS if excel_sheet == ALL_SHEETS
+                        else default_text_column(sheet_columns)
+                    )
+
+                    with column_col:
+                        excel_column = st.selectbox(
+                            "Text Column",
+                            column_options,
+                            index=column_options.index(default_column),
+                            key=f"excel_text_column_{excel_sheet}",
+                            help=(
+                                "The column that contains the sentences, or every "
+                                "column with text."
+                            ),
+                        )
+
+                    if len(workbook) > len(non_empty):
+                        st.caption(
+                            f"{plural(len(workbook) - len(non_empty), 'empty sheet')} "
+                            "skipped."
+                        )
+
+            except (ValueError, ImportError) as exc:
+                st.error(f"The Excel file could not be previewed. {exc}")
+
+            except Exception:
+                LOGGER.exception("Excel preview failed")
+                st.error("The Excel file could not be previewed.")
+
+        if uploaded is not None and uploaded.name.lower().endswith(".csv"):
+            try:
+                preview_df = read_csv_bytes(uploaded.getvalue())
+
+                if len(preview_df.columns):
+                    csv_column = st.selectbox(
+                        "Text Column",
+                        ["Auto-detect"] + list(preview_df.columns),
+                        key="csv_text_column",
+                        help="The CSV column that contains the sentences.",
+                    )
+
+                    if csv_column == "Auto-detect":
+                        csv_column = None
+
+            except ValueError as exc:
+                st.error(f"The CSV file could not be previewed. {exc}")
+
+            except Exception:
+                LOGGER.exception("CSV preview failed")
+                st.error("The CSV file could not be previewed.")
+
+
+    # ============================================================
+    # INPUT SOURCE
+    # ============================================================
+
+    active_source = input_source(uploaded)
+    source_key = (
+        ("document", uploaded.name, uploaded.size)
+        if active_source == "document" else ("manual",)
     )
 
+    # A new, changed or removed document makes earlier sentences and results
+    # stale: drop them so nothing from the previous source can be run.
+    if st.session_state.get("input_source_key") not in (None, source_key):
+        clear_prepared_input()
+    st.session_state["input_source_key"] = source_key
 
-with tab_file:
-    uploaded = st.file_uploader(
-        "Upload a TXT, DOCX, PDF, CSV or Excel file",
-        type=["txt", "docx", "pdf", "csv", "xlsx", "xls"],
+    if active_source == "document":
+        st.caption(f"Input source: Uploaded document ({uploaded.name})")
+
+        if manual_text.strip():
+            st.info(
+                "A document is uploaded, so the text in the text box is ignored. "
+                "Remove the document to use the text box."
+            )
+    else:
+        st.caption("Input source: Manual sentences")
+
+
+    # ============================================================
+    # PROCESS INPUT
+    # ============================================================
+
+    if st.button(
+        "Prepare Sentences",
+        type="primary",
+        key="process_input",
+        icon=":material/segment:",
         help=(
-            "Scanned (image-only) PDFs are not supported. In CSV and Excel "
-            "files, the first row is read as column headers."
+            "Splits the text or document into sentences. Entities are "
+            "extracted in the next step."
         ),
-    )
-
-    csv_column = None
-    excel_sheet, excel_column = ALL_SHEETS, ALL_COLUMNS
-
-    if uploaded is not None and uploaded.name.lower().endswith(EXCEL_TYPES):
+    ):
         try:
-            workbook = read_excel_bytes(uploaded.getvalue(), uploaded.name)
-            non_empty = {name: df for name, df in workbook.items() if not df.empty}
+            if active_source == "manual":
+                raw_text = manual_text
+                source_name = "the text box"
 
-            if not non_empty:
-                st.info("This workbook has no data rows.")
+            elif uploaded.name.lower().endswith(EXCEL_TYPES):
+                # Split cell by cell so every sentence keeps its cell location.
+                cells, excel_stats = excel_cells(
+                    read_excel_bytes(uploaded.getvalue(), uploaded.name),
+                    excel_sheet,
+                    excel_column,
+                )
+                raw_text = None
+                excel_sentences, excel_origins = [], []
+
+                for text, location in cells:
+                    for sentence in split_sentences(text):
+                        excel_sentences.append(sentence)
+                        excel_origins.append(location)
+
+                source_name = uploaded.name
 
             else:
-                sheet_col, column_col = st.columns(2)
+                raw_text = read_file(
+                    uploaded,
+                    csv_column,
+                )
+                source_name = uploaded.name
 
-                with sheet_col:
-                    excel_sheet = st.selectbox(
-                        "Sheet",
-                        ([ALL_SHEETS] if len(non_empty) > 1 else []) + list(non_empty),
-                        key="excel_sheet",
-                        help="Process one sheet or every sheet with data.",
+                if (
+                    uploaded.name.lower().endswith(".pdf")
+                    and pdf_devanagari_damaged(uploaded.getvalue())
+                ):
+                    st.warning(
+                        "Hindi/Marathi text in this PDF was not extracted "
+                        "correctly (a common PDF font limitation), so entity "
+                        "results may be unreliable. For best results, upload the "
+                        "same content as DOCX or TXT, or paste the text."
                     )
 
-                sheet_columns = list(dict.fromkeys(
-                    column
-                    for name, df in non_empty.items()
-                    if excel_sheet in (ALL_SHEETS, name)
-                    for column in df.columns
-                ))
-                column_options = [ALL_COLUMNS] + sheet_columns
-                # Sheets can have different layouts, so a named text column
-                # is only pre-selected for a single sheet.
-                default_column = (
-                    ALL_COLUMNS if excel_sheet == ALL_SHEETS
-                    else default_text_column(sheet_columns)
+            if raw_text is None:
+                sentences, origins = excel_sentences, excel_origins
+            else:
+                sentences, origins = split_sentences(raw_text), None
+
+            if not sentences:
+                clear_prepared_input()
+                st.warning(
+                    "No readable text was found in the uploaded document. Please "
+                    "upload a valid document."
+                    if active_source == "document" else
+                    "No readable text was found. Enter text or upload a document."
                 )
 
-                with column_col:
-                    excel_column = st.selectbox(
-                        "Text Column",
-                        column_options,
-                        index=column_options.index(default_column),
-                        key=f"excel_text_column_{excel_sheet}",
-                        help=(
-                            "The column that contains the sentences, or every "
-                            "column with text."
-                        ),
-                    )
+            else:
+                st.session_state["sentences"] = sentences
+                st.session_state["sentence_origins"] = origins
+                st.session_state["source_name"] = source_name
+                st.session_state["ner_results"] = None
 
-                if len(workbook) > len(non_empty):
-                    st.caption(
-                        f"{plural(len(workbook) - len(non_empty), 'empty sheet')} "
-                        "skipped."
+                if origins is None:
+                    st.success(
+                        f"Extracted {plural(len(sentences), 'sentence')} from {source_name}."
+                    )
+                else:
+                    st.success(
+                        f"Extracted {plural(len(sentences), 'sentence')} from "
+                        f"{plural(excel_stats['rows'], 'row')} in "
+                        f"{plural(excel_stats['sheets'], 'sheet')} of {source_name}."
                     )
 
         except (ValueError, ImportError) as exc:
-            st.error(f"The Excel file could not be previewed. {exc}")
-
-        except Exception:
-            LOGGER.exception("Excel preview failed")
-            st.error("The Excel file could not be previewed.")
-
-    if uploaded is not None and uploaded.name.lower().endswith(".csv"):
-        try:
-            preview_df = read_csv_bytes(uploaded.getvalue())
-
-            if len(preview_df.columns):
-                csv_column = st.selectbox(
-                    "Text Column",
-                    ["Auto-detect"] + list(preview_df.columns),
-                    key="csv_text_column",
-                    help="The CSV column that contains the sentences.",
-                )
-
-                if csv_column == "Auto-detect":
-                    csv_column = None
-
-        except ValueError as exc:
-            st.error(f"The CSV file could not be previewed. {exc}")
-
-        except Exception:
-            LOGGER.exception("CSV preview failed")
-            st.error("The CSV file could not be previewed.")
-
-
-# ============================================================
-# INPUT SOURCE
-# ============================================================
-
-active_source = input_source(uploaded)
-source_key = (
-    ("document", uploaded.name, uploaded.size)
-    if active_source == "document" else ("manual",)
-)
-
-# A new, changed or removed document makes earlier sentences and results
-# stale: drop them so nothing from the previous source can be run.
-if st.session_state.get("input_source_key") not in (None, source_key):
-    clear_prepared_input()
-st.session_state["input_source_key"] = source_key
-
-if active_source == "document":
-    st.caption(f"Input source: Uploaded document ({uploaded.name})")
-
-    if manual_text.strip():
-        st.info(
-            "A document is uploaded, so the text in the text box is ignored. "
-            "Remove the document to use the text box."
-        )
-else:
-    st.caption("Input source: Manual sentences")
-
-
-# ============================================================
-# PROCESS INPUT
-# ============================================================
-
-if st.button(
-    "Prepare Sentences",
-    type="primary",
-    key="process_input",
-    icon=":material/segment:",
-    help=(
-        "Splits the text or document into sentences. Entities are "
-        "extracted in the next step."
-    ),
-):
-    try:
-        if active_source == "manual":
-            raw_text = manual_text
-            source_name = "the text box"
-
-        elif uploaded.name.lower().endswith(EXCEL_TYPES):
-            # Split cell by cell so every sentence keeps its cell location.
-            cells, excel_stats = excel_cells(
-                read_excel_bytes(uploaded.getvalue(), uploaded.name),
-                excel_sheet,
-                excel_column,
-            )
-            raw_text = None
-            excel_sentences, excel_origins = [], []
-
-            for text, location in cells:
-                for sentence in split_sentences(text):
-                    excel_sentences.append(sentence)
-                    excel_origins.append(location)
-
-            source_name = uploaded.name
-
-        else:
-            raw_text = read_file(
-                uploaded,
-                csv_column,
-            )
-            source_name = uploaded.name
-
-            if (
-                uploaded.name.lower().endswith(".pdf")
-                and pdf_devanagari_damaged(uploaded.getvalue())
-            ):
-                st.warning(
-                    "Hindi/Marathi text in this PDF was not extracted "
-                    "correctly (a common PDF font limitation), so entity "
-                    "results may be unreliable. For best results, upload the "
-                    "same content as DOCX or TXT, or paste the text."
-                )
-
-        if raw_text is None:
-            sentences, origins = excel_sentences, excel_origins
-        else:
-            sentences, origins = split_sentences(raw_text), None
-
-        if not sentences:
+            # Raised by read_file with a user-readable explanation.
             clear_prepared_input()
-            st.warning(
-                "No readable text was found in the uploaded document. Please "
-                "upload a valid document."
-                if active_source == "document" else
-                "No readable text was found. Enter text or upload a document."
+            st.error(f"The input could not be processed. {exc}")
+
+        except Exception:
+            clear_prepared_input()
+            LOGGER.exception("Input processing failed")
+            st.error(
+                "The input could not be processed because of an unexpected "
+                "error. Details were written to the application log."
             )
 
-        else:
-            st.session_state["sentences"] = sentences
-            st.session_state["sentence_origins"] = origins
-            st.session_state["source_name"] = source_name
-            st.session_state["ner_results"] = None
 
-            if origins is None:
-                st.success(
-                    f"Extracted {plural(len(sentences), 'sentence')} from {source_name}."
-                )
+    # ============================================================
+    # SENTENCE PREVIEW
+    # ============================================================
+
+    if "sentences" in st.session_state:
+        sentences = st.session_state["sentences"]
+
+        st.divider()
+        st.header("02 · Sentence Preview")
+
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric("Sentences", len(sentences))
+
+        c2.metric(
+            "Input Language",
+            ner_language,
+        )
+
+        c3.metric(
+            "Source",
+            st.session_state.get("source_name", "Input"),
+        )
+
+        # Show what the text actually contains so a wrong language choice does
+        # not silently mislead the user.
+        detected_script = detect_script(" ".join(sentences))
+        route_language = ner_route(ner_language, ner_engine)
+
+        st.caption(
+            f"Detected script: {detected_script} · "
+            f"NER model for this input: {model_label(route_language)}"
+        )
+
+        if language_mismatch(ner_language, detected_script):
+            st.warning(
+                f"Selected language is {ner_language}, but the text appears to be "
+                f"in {detected_script}. Extraction will still run, but results "
+                "are likely to be poor. Select the language that matches the text."
+            )
+
+        with st.expander(
+            "Extracted Sentences",
+            expanded=True,
+        ):
+            origins = st.session_state.get("sentence_origins")
+
+            for index, sentence in enumerate(sentences, start=1):
+                location = f" · {origins[index - 1]}" if origins else ""
+                st.markdown(f"**Sentence {index}**{escape_markdown(location)}")
+                st.markdown(escape_markdown(sentence))
+
+        sentence_df = pd.DataFrame({
+            "Sentence No.": range(1, len(sentences) + 1),
+            **({"Location": origins} if origins else {}),
+            "Sentence": sentences,
+        })
+
+        st.download_button(
+            "Download Sentences (CSV)",
+            dataframe_csv(sentence_df),
+            "extracted_sentences.csv",
+            "text/csv",
+            key="download_sentences",
+            icon=":material/download:",
+        )
+
+
+        # ========================================================
+        # NER EXTRACTION
+        # ========================================================
+
+        st.divider()
+        st.header("03 · Entity Extraction")
+
+        st.caption(
+            "Entities are extracted from each sentence. Start and End are "
+            "character offsets in the original sentence."
+        )
+
+        threshold = st.slider(
+            "Minimum Confidence",
+            min_value=0.0,
+            max_value=0.95,
+            value=0.30,
+            step=0.05,
+            help=(
+                "Lower values return more entities but may include more false "
+                "positives."
+            ),
+            key="ner_threshold",
+        )
+
+        if st.button(
+            "Extract Entities",
+            type="primary",
+            key="run_ner",
+            icon=":material/manage_search:",
+            help="Runs the selected NER model on every sentence.",
+        ):
+            if not model_name.strip():
+                st.error("Enter a multilingual model ID in the sidebar.")
+
             else:
-                st.success(
-                    f"Extracted {plural(len(sentences), 'sentence')} from "
-                    f"{plural(excel_stats['rows'], 'row')} in "
-                    f"{plural(excel_stats['sheets'], 'sheet')} of {source_name}."
+                try:
+                    with st.spinner(
+                        f"Extracting entities from {plural(len(sentences), 'sentence')}…"
+                    ):
+                        language = ner_route(ner_language, ner_engine)
+
+                        ner_rows = run_for_sentences(
+                            sentences,
+                            threshold,
+                            model_name.strip(),
+                            language,
+                        )
+
+                        # Spreadsheet input: add the source cell of each row.
+                        origins = st.session_state.get("sentence_origins")
+                        if origins:
+                            ner_rows = [
+                                {
+                                    "Sentence No.": row["Sentence No."],
+                                    "Location": origins[row["Sentence No."] - 1],
+                                    **row,
+                                }
+                                for row in ner_rows
+                            ]
+
+                        st.session_state["ner_results"] = ner_rows
+                        st.session_state["used_model"] = (
+                            model_label(language)
+                            if language in TRAINED_MODELS
+                            else model_name.strip()
+                        )
+
+                    st.success(
+                        "Entity extraction complete: "
+                        f"{plural(len(ner_rows), 'entity', 'entities')} found in "
+                        f"{plural(len(sentences), 'sentence')}."
+                    )
+
+                except ValueError as exc:
+                    # e.g. a model ID whose labels cannot be mapped to PER/LOC/ORG
+                    st.error(f"Entity extraction failed. {exc}")
+
+                except Exception:
+                    LOGGER.exception("Entity extraction failed")
+                    st.error(
+                        "Entity extraction failed: the model could not be loaded "
+                        "or run. Check the model ID and your connection, then try "
+                        "again. Details were written to the application log."
+                    )
+
+
+        # ========================================================
+        # NER RESULTS
+        # ========================================================
+
+        rows = st.session_state.get("ner_results")
+
+        if rows is not None:
+            st.subheader("Extracted Entities")
+
+            if rows:
+                result_df = pd.DataFrame(rows)
+
+                p, l, o, total = st.columns(4)
+
+                p.metric(
+                    "PER",
+                    sum(row["Entity Type"] == "PER" for row in rows),
                 )
 
-    except (ValueError, ImportError) as exc:
-        # Raised by read_file with a user-readable explanation.
-        clear_prepared_input()
-        st.error(f"The input could not be processed. {exc}")
+                l.metric(
+                    "LOC",
+                    sum(row["Entity Type"] == "LOC" for row in rows),
+                )
 
-    except Exception:
-        clear_prepared_input()
-        LOGGER.exception("Input processing failed")
-        st.error(
-            "The input could not be processed because of an unexpected "
-            "error. Details were written to the application log."
+                o.metric(
+                    "ORG",
+                    sum(row["Entity Type"] == "ORG" for row in rows),
+                )
+
+                total.metric(
+                    "Total Entities",
+                    len(rows),
+                )
+
+                show_entity_table(result_df)
+
+                st.download_button(
+                    "Download Results (CSV)",
+                    dataframe_csv(result_df),
+                    "ner_results.csv",
+                    "text/csv",
+                    key="download_ner",
+                    icon=":material/download:",
+                )
+
+            else:
+                st.warning(
+                    "No entities were detected. This does not necessarily mean "
+                    "the text contains none: the model may have missed them, or "
+                    "the minimum confidence may be too high."
+                )
+
+            st.caption(
+                "Model: " + st.session_state.get("used_model", model_name)
+            )
+
+            with st.expander("How to read the results"):
+                st.markdown(
+                    "- **PER** = person, **LOC** = location, **ORG** = organization.\n"
+                    "- **Confidence** is the model's own score (0–1), not a "
+                    "verified accuracy.\n"
+                    "- **Start / End** are character offsets in the sentence.\n"
+                    "- **Source** names the model that found the entity. "
+                    "*+ configured alias* means the result also matches a known "
+                    "spelling in the alias list (the model's confidence is kept). "
+                    "*Configured alias — review* means it was found only through "
+                    "the alias list (shown as 1.0); please check these entries."
+                )
+
+
+with bilingual_tab:
+    # ============================================================
+    # ENTITY ALIGNMENT: INPUT + EXTRACTION
+    # ============================================================
+    st.header("04 · Entity Alignment")
+
+    st.caption(
+        "Choose the language pair, then enter two corresponding sentences or "
+        "upload a document that contains them. Named entities are extracted "
+        "independently from each sentence and then aligned."
+    )
+
+    MANUAL_METHOD = "Enter Sentences Manually"
+    DOCUMENT_METHOD = "Upload a Document"
+
+    # Keep typed sentences while their fields are hidden in document mode
+    # (Streamlit forgets the state of widgets that are not rendered).
+    for kept in ("bilingual_english", "bilingual_second"):
+        if kept in st.session_state:
+            st.session_state[kept] = st.session_state[kept]
+
+    input_method = st.segmented_control(
+        "Input Method",
+        [MANUAL_METHOD, DOCUMENT_METHOD],
+        default=MANUAL_METHOD,
+        required=True,
+        key="align_input_method",
+        help="Only the selected input is processed.",
+    )
+
+
+    pair_col, engine_col = st.columns(2)
+
+    with pair_col:
+        language_pair = st.segmented_control(
+            "Language Pair",
+            list(LANGUAGE_PAIRS),
+            default="English → Hindi",
+            required=True,
+            key="bilingual_pair",
+            help="The languages of the first and second sentence, in that order.",
+        )
+
+    with engine_col:
+        # Fixed: the bilingual workflow uses the baseline multilingual model.
+        bilingual_engine = fixed_model(NER_ENGINES[0])
+
+    first_language, second_language = LANGUAGE_PAIRS[language_pair]
+    indic_language = second_language if first_language == "English" else first_language
+
+
+    align_document = None
+    if input_method == DOCUMENT_METHOD:
+        align_document = st.file_uploader(
+            "Upload a document with corresponding sentences",
+            type=ALIGNMENT_DOCUMENT_TYPES,
+            key="align_document",
+            help=(
+                "Excel or CSV: one column per language, one sentence pair per "
+                "row (row 1 = headers). Word, PDF or TXT: choose the two "
+                "corresponding sentences from the extracted text."
+            ),
+        )
+
+    # Results belong to one input: a new mode or document makes them stale.
+    align_source_key = (
+        ("manual",) if input_method == MANUAL_METHOD
+        else ("document", align_document.name, align_document.size) if align_document
+        else ("document",)
+    )
+    if st.session_state.get("align_source_key") not in (None, align_source_key):
+        st.session_state.pop("bilingual_results", None)
+    st.session_state["align_source_key"] = align_source_key
+
+    document_sides, document_problem, document_label = None, None, None
+    kind = None  # "table" / "sentences" once a document was read
+
+    if input_method == DOCUMENT_METHOD:
+        if align_document is None:
+            document_problem = "Upload a document to align its sentences."
+            st.info(document_problem)
+
+        else:
+            try:
+                kind, content = load_alignment_document(align_document)
+            except (ValueError, ImportError) as exc:
+                kind, content = None, None
+                document_problem = f"The document could not be read. {exc}"
+                st.error(document_problem)
+            except Exception:
+                LOGGER.exception("Alignment document could not be read")
+                kind, content = None, None
+                document_problem = "The document could not be read."
+                st.error(document_problem)
+
+            if kind == "table" and not content:
+                document_problem = (
+                    "No data rows were found in the uploaded document. Please "
+                    "upload a valid document."
+                )
+
+            elif kind == "table":
+                # One sentence pair per row: pick the sheet, the two language
+                # columns and the row.
+                table_cols = st.columns(4)
+                doc_sheet = table_cols[0].selectbox(
+                    "Sheet", list(content), key="align_sheet",
+                    disabled=len(content) == 1,
+                )
+                sheet_df = content[doc_sheet]
+                columns = list(sheet_df.columns)
+
+                def guess(language, fallback):
+                    return next((i for i, c in enumerate(columns)
+                                 if language.casefold() in str(c).casefold()), fallback)
+
+                doc_english = table_cols[1].selectbox(
+                    "English Column", columns, index=guess("English", 0),
+                    key=f"align_english_{doc_sheet}",
+                )
+                doc_indic = table_cols[2].selectbox(
+                    f"{indic_language} Column", columns,
+                    index=guess(indic_language, min(1, len(columns) - 1)),
+                    key=f"align_indic_{indic_language}_{doc_sheet}",
+                )
+                doc_row = table_cols[3].number_input(
+                    "Row", min_value=2, max_value=len(sheet_df) + 1, value=2,
+                    step=1, key=f"align_row_{doc_sheet}",
+                    help="Spreadsheet row number (row 1 holds the headers).",
+                )
+
+                if doc_english == doc_indic:
+                    document_problem = (
+                        f"Choose two different columns for English and {indic_language}."
+                    )
+                else:
+                    preview = sheet_df[[doc_english, doc_indic]].copy()
+                    preview.insert(0, "Row", range(2, len(sheet_df) + 2))
+                    st.dataframe(preview, width="stretch", hide_index=True, height=210)
+
+                    document_sides, document_problem = spreadsheet_pair(
+                        content, doc_sheet, doc_english, doc_indic,
+                        int(doc_row), (first_language, second_language),
+                    )
+                    document_label = (
+                        f"{align_document.name} · {doc_sheet}, row {int(doc_row)}"
+                        if len(content) > 1 else
+                        f"{align_document.name} · row {int(doc_row)}"
+                    )
+
+            elif kind == "sentences" and len(content) < 2:
+                document_problem = (
+                    "The document does not contain enough sentences to form a "
+                    "sentence pair. Please upload a valid document."
+                    if content else
+                    "No readable text was found in the uploaded document. Please "
+                    "upload a valid document."
+                )
+
+            elif kind == "sentences":
+                # Arbitrary text is not assumed to be aligned: the user picks
+                # the sentence for each language.
+                st.dataframe(
+                    pd.DataFrame({
+                        "No.": range(1, len(content) + 1),
+                        "Sentence": content,
+                        "Script": [detect_script(s) for s in content],
+                    }),
+                    width="stretch", hide_index=True, height=210,
+                )
+
+                def numbered(i):
+                    text = content[i]
+                    return f"{i + 1}. {text[:90]}{'…' if len(text) > 90 else ''}"
+
+                pick_cols = st.columns(2)
+                first_index = pick_cols[0].selectbox(
+                    f"{first_language} Sentence", range(len(content)),
+                    index=default_sentence_index(content, first_language),
+                    format_func=numbered, key=f"align_first_{first_language}",
+                )
+                second_index = pick_cols[1].selectbox(
+                    f"{second_language} Sentence", range(len(content)),
+                    index=default_sentence_index(content, second_language, first_index),
+                    format_func=numbered, key=f"align_second_{second_language}",
+                )
+                document_sides, document_problem = sentence_pair(
+                    content, first_index, second_index,
+                    (first_language, second_language),
+                )
+                document_label = (
+                    f"{align_document.name} · sentences {first_index + 1} and "
+                    f"{second_index + 1}"
+                )
+
+            if document_sides:
+                preview_cols = st.columns(2)
+                for column, (language, text) in zip(preview_cols, document_sides):
+                    with column, st.container(border=True):
+                        st.markdown(f"**{language} Sentence**")
+                        st.markdown(escape_markdown(text))
+            elif kind is not None and document_problem:
+                # Read errors were shown above; this covers content problems.
+                st.warning(document_problem)
+
+
+    def sentence_box(language: str):
+        """Sentence input for `language`. The English box and the Hindi/Marathi
+        box keep their own keys, so text stays with its language when the pair
+        order changes."""
+        return st.text_area(
+            f"{language} Sentence",
+            placeholder=EXAMPLE_SENTENCES[language],
+            key="bilingual_english" if language == "English" else "bilingual_second",
         )
 
 
-# ============================================================
-# SENTENCE PREVIEW
-# ============================================================
+    if input_method == MANUAL_METHOD:
+        first_col, second_col = st.columns(2)
 
-if "sentences" in st.session_state:
-    sentences = st.session_state["sentences"]
+        with first_col:
+            first_sentence = sentence_box(first_language)
 
-    st.divider()
-    st.header("02 · Sentence Preview")
+        with second_col:
+            second_sentence = sentence_box(second_language)
 
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric("Sentences", len(sentences))
-
-    c2.metric(
-        "Input Language",
-        ner_language,
-    )
-
-    c3.metric(
-        "Source",
-        st.session_state.get("source_name", "Input"),
-    )
-
-    # Show what the text actually contains so a wrong language choice does
-    # not silently mislead the user.
-    detected_script = detect_script(" ".join(sentences))
-    route_language = ner_route(ner_language, ner_engine)
-
-    st.caption(
-        f"Detected script: {detected_script} · "
-        f"NER model for this input: {model_label(route_language)}"
-    )
-
-    if language_mismatch(ner_language, detected_script):
-        st.warning(
-            f"Selected language is {ner_language}, but the text appears to be "
-            f"in {detected_script}. Extraction will still run, but results "
-            "are likely to be poor. Select the language that matches the text."
-        )
-
-    with st.expander(
-        "Extracted Sentences",
-        expanded=True,
-    ):
-        origins = st.session_state.get("sentence_origins")
-
-        for index, sentence in enumerate(sentences, start=1):
-            location = f" · {origins[index - 1]}" if origins else ""
-            st.markdown(f"**Sentence {index}**{escape_markdown(location)}")
-            st.markdown(escape_markdown(sentence))
-
-    sentence_df = pd.DataFrame({
-        "Sentence No.": range(1, len(sentences) + 1),
-        **({"Location": origins} if origins else {}),
-        "Sentence": sentences,
-    })
-
-    st.download_button(
-        "Download Sentences (CSV)",
-        dataframe_csv(sentence_df),
-        "extracted_sentences.csv",
-        "text/csv",
-        key="download_sentences",
-        icon=":material/download:",
-    )
-
-
-    # ========================================================
-    # NER EXTRACTION
-    # ========================================================
-
-    st.divider()
-    st.header("03 · Entity Extraction")
-
-    st.caption(
-        "Entities are extracted from each sentence. Start and End are "
-        "character offsets in the original sentence."
-    )
-
-    threshold = st.slider(
+    bilingual_threshold = st.slider(
         "Minimum Confidence",
         min_value=0.0,
         max_value=0.95,
         value=0.30,
         step=0.05,
+        key="bilingual_threshold",
         help=(
             "Lower values return more entities but may include more false "
             "positives."
         ),
-        key="ner_threshold",
     )
 
+
     if st.button(
-        "Extract Entities",
+        "Extract and Align Entities",
         type="primary",
-        key="run_ner",
-        icon=":material/manage_search:",
-        help="Runs the selected NER model on every sentence.",
+        key="run_bilingual",
+        icon=":material/compare_arrows:",
     ):
-        if not model_name.strip():
-            st.error("Enter a multilingual model ID in the sidebar.")
+        sides = None
+
+        if input_method == DOCUMENT_METHOD:
+            # Document only: never the (hidden) manual fields.
+            if document_sides:
+                sides = document_sides
+                source_label = document_label
+            else:
+                st.session_state.pop("bilingual_results", None)
+                st.warning(document_problem)
 
         else:
+            missing = [
+                language
+                for language, text in (
+                    (first_language, first_sentence),
+                    (second_language, second_sentence),
+                )
+                if not text.strip()
+            ]
+
+            if missing:
+                st.warning(
+                    f"Enter the {missing[0]} sentence."
+                    if len(missing) == 1 else
+                    f"Enter both the {first_language} and the {second_language} sentence."
+                )
+            else:
+                # Input order; each sentence goes to its own language's model.
+                sides = [
+                    (first_language, first_sentence),
+                    (second_language, second_sentence),
+                ]
+                source_label = "Manually entered sentences"
+
+        if sides is not None and not model_name.strip():
+            st.error("Enter a multilingual model ID in the sidebar.")
+
+        elif sides is not None:
+            for language_name, text in sides:
+                if language_mismatch(language_name, detect_script(text)):
+                    st.warning(
+                        f"The {language_name} sentence appears to be written in "
+                        f"{detect_script(text)}. Check the inputs and the "
+                        "selected language pair."
+                    )
+
             try:
                 with st.spinner(
-                    f"Extracting entities from {plural(len(sentences), 'sentence')}…"
+                    "Extracting entities from both sentences…"
                 ):
-                    language = ner_route(ner_language, ner_engine)
-
-                    ner_rows = run_for_sentences(
-                        sentences,
-                        threshold,
-                        model_name.strip(),
-                        language,
-                    )
-
-                    # Spreadsheet input: add the source cell of each row.
-                    origins = st.session_state.get("sentence_origins")
-                    if origins:
-                        ner_rows = [
-                            {
-                                "Sentence No.": row["Sentence No."],
-                                "Location": origins[row["Sentence No."] - 1],
-                                **row,
-                            }
-                            for row in ner_rows
-                        ]
-
-                    st.session_state["ner_results"] = ner_rows
-                    st.session_state["used_model"] = (
-                        model_label(language)
-                        if language in TRAINED_MODELS
-                        else model_name.strip()
-                    )
+                    st.session_state["bilingual_pair_used"] = language_pair
+                    st.session_state["bilingual_source_used"] = source_label
+                    st.session_state["bilingual_results"] = [
+                        (
+                            language_name,
+                            text,
+                            extract_ner(
+                                text,
+                                bilingual_threshold,
+                                model_name.strip(),
+                                ner_route(language_name, bilingual_engine),
+                            ),
+                        )
+                        for language_name, text in sides
+                    ]
 
                 st.success(
-                    "Entity extraction complete: "
-                    f"{plural(len(ner_rows), 'entity', 'entities')} found in "
-                    f"{plural(len(sentences), 'sentence')}."
+                    "Entities extracted from both sentences. Alignment results "
+                    "are shown below."
                 )
 
             except ValueError as exc:
-                # e.g. a model ID whose labels cannot be mapped to PER/LOC/ORG
                 st.error(f"Entity extraction failed. {exc}")
 
             except Exception:
-                LOGGER.exception("Entity extraction failed")
+                LOGGER.exception("Bilingual entity extraction failed")
                 st.error(
-                    "Entity extraction failed: the model could not be loaded "
-                    "or run. Check the model ID and your connection, then try "
-                    "again. Details were written to the application log."
+                    "Entity extraction failed: the model could not be loaded or "
+                    "run. Details were written to the application log."
                 )
 
 
-    # ========================================================
-    # NER RESULTS
-    # ========================================================
+    # ============================================================
+    # ENTITY ALIGNMENT: RESULTS
+    # ============================================================
 
-    rows = st.session_state.get("ner_results")
+    if st.session_state.get("bilingual_results"):
+        bilingual = st.session_state["bilingual_results"]
 
-    if rows is not None:
-        st.subheader("Extracted Entities")
+        st.caption(
+            "Results for "
+            + st.session_state.get("bilingual_pair_used", "the entered sentences")
+        )
+        st.caption(
+            "Source: "
+            + st.session_state.get("bilingual_source_used", "Manually entered sentences")
+        )
 
-        if rows:
-            result_df = pd.DataFrame(rows)
+        export_rows = []
 
-            p, l, o, total = st.columns(4)
+        for column, (language_name, sentence, entities) in zip(
+            st.columns(2),
+            bilingual,
+        ):
+            with column:
+                st.subheader(f"{language_name} Entities")
 
-            p.metric(
-                "PER",
-                sum(row["Entity Type"] == "PER" for row in rows),
-            )
+                st.markdown(escape_markdown(sentence))
 
-            l.metric(
-                "LOC",
-                sum(row["Entity Type"] == "LOC" for row in rows),
-            )
+                if entities:
+                    show_entity_table(pd.DataFrame(entities))
 
-            o.metric(
-                "ORG",
-                sum(row["Entity Type"] == "ORG" for row in rows),
-            )
+                else:
+                    st.info(
+                        "No entities detected."
+                    )
 
-            total.metric(
-                "Total Entities",
-                len(rows),
-            )
+                for entity in entities:
+                    export_rows.append({
+                        "Language": language_name,
+                        "Sentence": sentence,
+                        **entity,
+                    })
 
-            show_entity_table(result_df)
-
+        if export_rows:
             st.download_button(
-                "Download Results (CSV)",
-                dataframe_csv(result_df),
-                "ner_results.csv",
+                "Download Entities (CSV)",
+                dataframe_csv(pd.DataFrame(export_rows)),
+                "bilingual_entity_results.csv",
                 "text/csv",
-                key="download_ner",
+                key="download_bilingual",
                 icon=":material/download:",
             )
 
-        else:
-            st.warning(
-                "No entities were detected. This does not necessarily mean "
-                "the text contains none: the model may have missed them, or "
-                "the minimum confidence may be too high."
-            )
-
-        st.caption(
-            "Model: " + st.session_state.get("used_model", model_name)
-        )
-
-        with st.expander("How to read the results"):
-            st.markdown(
-                "- **PER** = person, **LOC** = location, **ORG** = organization.\n"
-                "- **Confidence** is the model's own score (0–1), not a "
-                "verified accuracy.\n"
-                "- **Start / End** are character offsets in the sentence.\n"
-                "- **Source** names the model that found the entity. "
-                "*+ configured alias* means the result also matches a known "
-                "spelling in the alias list (the model's confidence is kept). "
-                "*Configured alias — review* means it was found only through "
-                "the alias list (shown as 1.0); please check these entries."
-            )
-
-
-# ============================================================
-# ENTITY ALIGNMENT: INPUT + EXTRACTION
-# ============================================================
-
-st.divider()
-st.header("04 · Entity Alignment")
-
-st.caption(
-    "Choose the language pair, then enter two corresponding sentences or "
-    "upload a document that contains them. Named entities are extracted "
-    "independently from each sentence and then aligned."
-)
-
-MANUAL_METHOD = "Enter Sentences Manually"
-DOCUMENT_METHOD = "Upload a Document"
-
-# Keep typed sentences while their fields are hidden in document mode
-# (Streamlit forgets the state of widgets that are not rendered).
-for kept in ("bilingual_english", "bilingual_second"):
-    if kept in st.session_state:
-        st.session_state[kept] = st.session_state[kept]
-
-input_method = st.segmented_control(
-    "Input Method",
-    [MANUAL_METHOD, DOCUMENT_METHOD],
-    default=MANUAL_METHOD,
-    required=True,
-    key="align_input_method",
-    help="Only the selected input is processed.",
-)
-
-
-pair_col, engine_col = st.columns(2)
-
-with pair_col:
-    language_pair = st.segmented_control(
-        "Language Pair",
-        list(LANGUAGE_PAIRS),
-        default="English → Hindi",
-        required=True,
-        key="bilingual_pair",
-        help="The languages of the first and second sentence, in that order.",
-    )
-
-with engine_col:
-    bilingual_engine = engine_selector("bilingual_engine")
-
-first_language, second_language = LANGUAGE_PAIRS[language_pair]
-indic_language = second_language if first_language == "English" else first_language
-
-
-align_document = None
-if input_method == DOCUMENT_METHOD:
-    align_document = st.file_uploader(
-        "Upload a document with corresponding sentences",
-        type=ALIGNMENT_DOCUMENT_TYPES,
-        key="align_document",
-        help=(
-            "Excel or CSV: one column per language, one sentence pair per "
-            "row (row 1 = headers). Word, PDF or TXT: choose the two "
-            "corresponding sentences from the extracted text."
-        ),
-    )
-
-# Results belong to one input: a new mode or document makes them stale.
-align_source_key = (
-    ("manual",) if input_method == MANUAL_METHOD
-    else ("document", align_document.name, align_document.size) if align_document
-    else ("document",)
-)
-if st.session_state.get("align_source_key") not in (None, align_source_key):
-    st.session_state.pop("bilingual_results", None)
-st.session_state["align_source_key"] = align_source_key
-
-document_sides, document_problem, document_label = None, None, None
-kind = None  # "table" / "sentences" once a document was read
-
-if input_method == DOCUMENT_METHOD:
-    if align_document is None:
-        document_problem = "Upload a document to align its sentences."
-        st.info(document_problem)
-
-    else:
-        try:
-            kind, content = load_alignment_document(align_document)
-        except (ValueError, ImportError) as exc:
-            kind, content = None, None
-            document_problem = f"The document could not be read. {exc}"
-            st.error(document_problem)
-        except Exception:
-            LOGGER.exception("Alignment document could not be read")
-            kind, content = None, None
-            document_problem = "The document could not be read."
-            st.error(document_problem)
-
-        if kind == "table" and not content:
-            document_problem = (
-                "No data rows were found in the uploaded document. Please "
-                "upload a valid document."
-            )
-
-        elif kind == "table":
-            # One sentence pair per row: pick the sheet, the two language
-            # columns and the row.
-            table_cols = st.columns(4)
-            doc_sheet = table_cols[0].selectbox(
-                "Sheet", list(content), key="align_sheet",
-                disabled=len(content) == 1,
-            )
-            sheet_df = content[doc_sheet]
-            columns = list(sheet_df.columns)
-
-            def guess(language, fallback):
-                return next((i for i, c in enumerate(columns)
-                             if language.casefold() in str(c).casefold()), fallback)
-
-            doc_english = table_cols[1].selectbox(
-                "English Column", columns, index=guess("English", 0),
-                key=f"align_english_{doc_sheet}",
-            )
-            doc_indic = table_cols[2].selectbox(
-                f"{indic_language} Column", columns,
-                index=guess(indic_language, min(1, len(columns) - 1)),
-                key=f"align_indic_{indic_language}_{doc_sheet}",
-            )
-            doc_row = table_cols[3].number_input(
-                "Row", min_value=2, max_value=len(sheet_df) + 1, value=2,
-                step=1, key=f"align_row_{doc_sheet}",
-                help="Spreadsheet row number (row 1 holds the headers).",
-            )
-
-            if doc_english == doc_indic:
-                document_problem = (
-                    f"Choose two different columns for English and {indic_language}."
-                )
-            else:
-                preview = sheet_df[[doc_english, doc_indic]].copy()
-                preview.insert(0, "Row", range(2, len(sheet_df) + 2))
-                st.dataframe(preview, width="stretch", hide_index=True, height=210)
-
-                document_sides, document_problem = spreadsheet_pair(
-                    content, doc_sheet, doc_english, doc_indic,
-                    int(doc_row), (first_language, second_language),
-                )
-                document_label = (
-                    f"{align_document.name} · {doc_sheet}, row {int(doc_row)}"
-                    if len(content) > 1 else
-                    f"{align_document.name} · row {int(doc_row)}"
-                )
-
-        elif kind == "sentences" and len(content) < 2:
-            document_problem = (
-                "The document does not contain enough sentences to form a "
-                "sentence pair. Please upload a valid document."
-                if content else
-                "No readable text was found in the uploaded document. Please "
-                "upload a valid document."
-            )
-
-        elif kind == "sentences":
-            # Arbitrary text is not assumed to be aligned: the user picks
-            # the sentence for each language.
-            st.dataframe(
-                pd.DataFrame({
-                    "No.": range(1, len(content) + 1),
-                    "Sentence": content,
-                    "Script": [detect_script(s) for s in content],
-                }),
-                width="stretch", hide_index=True, height=210,
-            )
-
-            def numbered(i):
-                text = content[i]
-                return f"{i + 1}. {text[:90]}{'…' if len(text) > 90 else ''}"
-
-            pick_cols = st.columns(2)
-            first_index = pick_cols[0].selectbox(
-                f"{first_language} Sentence", range(len(content)),
-                index=default_sentence_index(content, first_language),
-                format_func=numbered, key=f"align_first_{first_language}",
-            )
-            second_index = pick_cols[1].selectbox(
-                f"{second_language} Sentence", range(len(content)),
-                index=default_sentence_index(content, second_language, first_index),
-                format_func=numbered, key=f"align_second_{second_language}",
-            )
-            document_sides, document_problem = sentence_pair(
-                content, first_index, second_index,
-                (first_language, second_language),
-            )
-            document_label = (
-                f"{align_document.name} · sentences {first_index + 1} and "
-                f"{second_index + 1}"
-            )
-
-        if document_sides:
-            preview_cols = st.columns(2)
-            for column, (language, text) in zip(preview_cols, document_sides):
-                with column, st.container(border=True):
-                    st.markdown(f"**{language} Sentence**")
-                    st.markdown(escape_markdown(text))
-        elif kind is not None and document_problem:
-            # Read errors were shown above; this covers content problems.
-            st.warning(document_problem)
-
-
-def sentence_box(language: str):
-    """Sentence input for `language`. The English box and the Hindi/Marathi
-    box keep their own keys, so text stays with its language when the pair
-    order changes."""
-    return st.text_area(
-        f"{language} Sentence",
-        placeholder=EXAMPLE_SENTENCES[language],
-        key="bilingual_english" if language == "English" else "bilingual_second",
-    )
-
-
-if input_method == MANUAL_METHOD:
-    first_col, second_col = st.columns(2)
-
-    with first_col:
-        first_sentence = sentence_box(first_language)
-
-    with second_col:
-        second_sentence = sentence_box(second_language)
-
-bilingual_threshold = st.slider(
-    "Minimum Confidence",
-    min_value=0.0,
-    max_value=0.95,
-    value=0.30,
-    step=0.05,
-    key="bilingual_threshold",
-    help=(
-        "Lower values return more entities but may include more false "
-        "positives."
-    ),
-)
-
-
-if st.button(
-    "Extract and Align Entities",
-    type="primary",
-    key="run_bilingual",
-    icon=":material/compare_arrows:",
-):
-    sides = None
-
-    if input_method == DOCUMENT_METHOD:
-        # Document only: never the (hidden) manual fields.
-        if document_sides:
-            sides = document_sides
-            source_label = document_label
-        else:
-            st.session_state.pop("bilingual_results", None)
-            st.warning(document_problem)
-
-    else:
-        missing = [
-            language
-            for language, text in (
-                (first_language, first_sentence),
-                (second_language, second_sentence),
-            )
-            if not text.strip()
-        ]
-
-        if missing:
-            st.warning(
-                f"Enter the {missing[0]} sentence."
-                if len(missing) == 1 else
-                f"Enter both the {first_language} and the {second_language} sentence."
-            )
-        else:
-            # Input order; each sentence goes to its own language's model.
-            sides = [
-                (first_language, first_sentence),
-                (second_language, second_sentence),
-            ]
-            source_label = "Manually entered sentences"
-
-    if sides is not None and not model_name.strip():
-        st.error("Enter a multilingual model ID in the sidebar.")
-
-    elif sides is not None:
-        for language_name, text in sides:
-            if language_mismatch(language_name, detect_script(text)):
-                st.warning(
-                    f"The {language_name} sentence appears to be written in "
-                    f"{detect_script(text)}. Check the inputs and the "
-                    "selected language pair."
-                )
-
-        try:
-            with st.spinner(
-                "Extracting entities from both sentences…"
-            ):
-                st.session_state["bilingual_pair_used"] = language_pair
-                st.session_state["bilingual_source_used"] = source_label
-                st.session_state["bilingual_results"] = [
-                    (
-                        language_name,
-                        text,
-                        extract_ner(
-                            text,
-                            bilingual_threshold,
-                            model_name.strip(),
-                            ner_route(language_name, bilingual_engine),
-                        ),
-                    )
-                    for language_name, text in sides
-                ]
-
-            st.success(
-                "Entities extracted from both sentences. Alignment results "
-                "are shown below."
-            )
-
-        except ValueError as exc:
-            st.error(f"Entity extraction failed. {exc}")
-
-        except Exception:
-            LOGGER.exception("Bilingual entity extraction failed")
-            st.error(
-                "Entity extraction failed: the model could not be loaded or "
-                "run. Details were written to the application log."
-            )
-
-
-# ============================================================
-# ENTITY ALIGNMENT: RESULTS
-# ============================================================
-
-if st.session_state.get("bilingual_results"):
-    bilingual = st.session_state["bilingual_results"]
-
-    st.caption(
-        "Results for "
-        + st.session_state.get("bilingual_pair_used", "the entered sentences")
-    )
-    st.caption(
-        "Source: "
-        + st.session_state.get("bilingual_source_used", "Manually entered sentences")
-    )
-
-    export_rows = []
-
-    for column, (language_name, sentence, entities) in zip(
-        st.columns(2),
-        bilingual,
-    ):
-        with column:
-            st.subheader(f"{language_name} Entities")
-
-            st.markdown(escape_markdown(sentence))
-
-            if entities:
-                show_entity_table(pd.DataFrame(entities))
-
-            else:
-                st.info(
-                    "No entities detected."
-                )
-
-            for entity in entities:
-                export_rows.append({
-                    "Language": language_name,
-                    "Sentence": sentence,
-                    **entity,
-                })
-
-    if export_rows:
-        st.download_button(
-            "Download Entities (CSV)",
-            dataframe_csv(pd.DataFrame(export_rows)),
-            "bilingual_entity_results.csv",
-            "text/csv",
-            key="download_bilingual",
-            icon=":material/download:",
-        )
-
-    render_alignment(english_first(bilingual))
+        render_alignment(english_first(bilingual))
 
 
 # ============================================================

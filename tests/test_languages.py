@@ -68,11 +68,32 @@ CASES = {
 
 section("Sections 01-03: every input language through the UI")
 
+at = AppTest.from_file(APP_PATH, default_timeout=900)
+at.run()
+tabs = {t.label: t for t in at.tabs}
+mono_tab, bi_tab = tabs["Monolingual NER Extraction"], tabs["Bilingual NER Extraction"]
+
+
+def static_texts(tab):
+    return [m.value for m in tab.markdown if "static-field" in m.value]
+
+
+check("monolingual: no NER model dropdown; only Input Language is selectable",
+      [s.label for s in mono_tab.selectbox] == ["Input Language"]
+      and not any(s.key in ("ner_engine", "bilingual_engine") for s in at.selectbox),
+      [s.label for s in mono_tab.selectbox])
+check("monolingual: static text 'Language-specific trained models'",
+      static_texts(mono_tab) == ['<div class="static-field">Language-specific trained models</div>'],
+      static_texts(mono_tab))
+check("bilingual: no dropdown, static text 'Baseline multilingual model'",
+      not bi_tab.selectbox
+      and static_texts(bi_tab) == ['<div class="static-field">Baseline multilingual model</div>'],
+      static_texts(bi_tab))
+
 for language, (sentence, model, expected) in CASES.items():
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.selectbox(key="ner_language").set_value(language)
-    at.selectbox(key="ner_engine").set_value(app.TRAINED_ENGINE).run()
+    at.selectbox(key="ner_language").set_value(language).run()
     at.text_area(key="manual_text").set_value(sentence)
     at.button(key="process_input").click().run()
 
@@ -123,8 +144,7 @@ section("Section 04: bilingual comparison")
 for second, sentence in [("Hindi", CASES["Hindi"][0]), ("Marathi", CASES["Marathi"][0])]:
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.segmented_control(key="bilingual_pair").set_value(f"English → {second}")
-    at.selectbox(key="bilingual_engine").set_value(app.TRAINED_ENGINE).run()
+    at.segmented_control(key="bilingual_pair").set_value(f"English → {second}").run()
     at.text_area(key="bilingual_english").set_value(CASES["English"][0])
     at.text_area(key="bilingual_second").set_value(sentence)
 
@@ -135,10 +155,10 @@ for second, sentence in [("Hindi", CASES["Hindi"][0]), ("Marathi", CASES["Marath
     at.button(key="run_bilingual").click().run()
     tables = [d.value for d in at.dataframe if "Source" in d.value]
     sources = set().union(*[set(t["Source"]) for t in tables]) if tables else set()
-    check(f"{second}: English BiLSTM-CRF on the English side, {second} BiLSTM-CRF on the other",
-          not at.exception
-          and any(s.startswith("English BiLSTM-CRF") for s in sources)
-          and any(s.startswith(f"{second} BiLSTM-CRF") for s in sources),
+    check(f"{second}: both sides handled by the baseline multilingual model (bilingual is fixed to it)",
+          not at.exception and sources
+          and all(s.startswith((app.BASELINE_SOURCE, "Configured alias")) for s in sources)
+          and any(s.startswith(app.BASELINE_SOURCE) for s in sources),
           {"exceptions": [e.value for e in at.exception], "sources": sources})
     check(f"{second}: CSV export offered",
           any(b.label == "Download Entities (CSV)" for b in at.get("download_button")))

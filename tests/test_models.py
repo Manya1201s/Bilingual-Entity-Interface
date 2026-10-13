@@ -231,11 +231,12 @@ section("Streamlit UI routing (real app via AppTest)")
 
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
+# The monolingual workflow is fixed to the language-specific trained
+# models: the selected input language picks the model.
 for language, sentence, source in ROUTES[:3]:
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
     at.selectbox(key="ner_language").set_value(language)
-    at.selectbox(key="ner_engine").set_value(app.TRAINED_ENGINE)
     at.text_area(key="manual_text").set_value(sentence)
     at.button(key="process_input").click().run()
     caption_ok = any(f"NER model for this input: {source}" in c.value for c in at.caption)
@@ -251,13 +252,13 @@ at.run()
 at.segmented_control(key="bilingual_pair").set_value("English → Marathi").run()
 at.text_area(key="bilingual_english").set_value("Priya Mehta visited Geneva.")
 at.text_area(key="bilingual_second").set_value("प्रिया मेहता जिनेव्हा येथे गेल्या.")
-at.selectbox(key="bilingual_engine").set_value("Language-specific trained models").run()
 at.button(key="run_bilingual").click().run()
 tables = [d.value for d in at.dataframe if "Source" in d.value]
 sources = set().union(*[set(t["Source"]) for t in tables]) if tables else set()
-check("UI bilingual: trained models -> English and Marathi BiLSTM-CRF used",
-      not at.exception and any(s.startswith("English BiLSTM-CRF") for s in sources)
-      and any(s.startswith("Marathi BiLSTM-CRF") for s in sources), sources)
+check("UI bilingual: fixed baseline multilingual model used for both sentences",
+      not at.exception and sources
+      and all(s.startswith((app.BASELINE_SOURCE, "Configured alias")) for s in sources)
+      and any(s.startswith(app.BASELINE_SOURCE) for s in sources), sources)
 
 # ----------------------------------------------------------------------
 print(f"\nMODEL-ONLY observations (not asserted):")

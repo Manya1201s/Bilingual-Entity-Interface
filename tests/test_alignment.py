@@ -169,11 +169,11 @@ section("Part 2: the real app (section 04)")
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 
-def run_app(second, english, other, engine):
+def run_app(second, english, other):
+    """Bilingual workflow (its NER model is fixed: baseline multilingual)."""
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.segmented_control(key="bilingual_pair").set_value(f"English → {second}")
-    at.selectbox(key="bilingual_engine").set_value(engine).run()
+    at.segmented_control(key="bilingual_pair").set_value(f"English → {second}").run()
     at.text_area(key="bilingual_english").set_value(english)
     at.text_area(key="bilingual_second").set_value(other)
     at.button(key="run_bilingual").click().run()
@@ -181,9 +181,12 @@ def run_app(second, english, other, engine):
     return at, table
 
 
-BASELINE, TRAINED = "Baseline multilingual model", "Language-specific trained models"
-
-at, table = run_app("Hindi", EN, HI, BASELINE)
+at, table = run_app("Hindi", EN, HI)
+bilingual_tab = next(t for t in at.tabs if t.label == "Bilingual NER Extraction")
+check("bilingual workflow shows its fixed model as static text, no model dropdown",
+      any("Baseline multilingual model" in m.value and "static-field" in m.value
+          for m in bilingual_tab.markdown)
+      and not any(s.key == "bilingual_engine" for s in at.selectbox))
 print(table.to_string() if table is not None else "no alignment table")
 check("alignment table has the required columns",
       table is not None and {"English Entity", "Hindi Entity", "Type", "Alignment Score",
@@ -205,9 +208,10 @@ check("UI: old generic 'not aligned' warning replaced by a truthful status",
       and any("Alignment complete" in s.value and "not been verified by a reviewer" in s.value
               for s in at.success))
 
-at, table = run_app("Hindi", EN, HI, TRAINED)
+# Hindi sentence without Manya's name: her English entity has no partner.
+at, table = run_app("Hindi", EN, "वह नोएडा में रहती है।")
 got = [] if table is None else list(zip(table["English Entity"], table["Hindi Entity"], table["Status"]))
-print("  OBSERVED trained-model alignment:", got)
+print("  OBSERVED alignment without a Hindi partner for Manya:", got)
 entity_tables = [d.value for d in at.dataframe if "Source" in d.value.columns]
 english_found = sorted(entity_tables[0]["Entity"]) if len(entity_tables) > 0 else []
 hindi_found = sorted(entity_tables[1]["Entity"]) if len(entity_tables) > 1 else []
@@ -217,9 +221,10 @@ check("UI: every entity from both NER tables appears in the alignment table (not
       and sorted(h for h in table["Hindi Entity"] if h) == hindi_found,
       {"english": english_found, "hindi": hindi_found, "alignment": got})
 check("UI: entities without evidence are shown as unmatched, not forced into a pair",
-      all(s != MATCHED or pair_score(e, h)[0] >= MATCH for e, h, s in got), got)
+      all(s != MATCHED or pair_score(e, h)[0] >= MATCH for e, h, s in got)
+      and ("Manya", "", "Unmatched English Entity") in got, got)
 
-at, table = run_app("Marathi", EN, "मान्या नोएडामध्ये राहते.", BASELINE)
+at, table = run_app("Marathi", EN, "मान्या नोएडामध्ये राहते.")
 got = [] if table is None else list(zip(table["English Entity"], table["Marathi Entity"], table["Status"]))
 print("  OBSERVED English–Marathi:", got)
 check("UI English–Marathi: alignment table present, no exceptions", table is not None and not at.exception)
@@ -256,20 +261,19 @@ SENTENCES = {
     "Hindi": HI,
     "Marathi": "मान्या नोएडामध्ये राहते.",
 }
-MODELS = {
-    "English": "English BiLSTM-CRF (scratch)",
-    "Hindi": "Hindi BiLSTM-CRF (scratch)",
-    "Marathi": "Marathi BiLSTM-CRF (scratch)",
-}
+# The bilingual workflow's NER model is fixed to the baseline multilingual
+# model, so every sentence (whatever its language) is handled by it.
+MODELS = {language: app.BASELINE_SOURCE for language in ("English", "Hindi", "Marathi")}
+check("bilingual routing: every language goes to the baseline multilingual model",
+      all(app.ner_route(language, app.NER_ENGINES[0]) == "Auto Detect" for language in MODELS))
 
 
-def run_pair(pair, engine, texts=None, click=True):
+def run_pair(pair, texts=None, click=True):
     first, second = PAIRS[pair]
     texts = texts or {first: SENTENCES[first], second: SENTENCES[second]}
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.segmented_control(key="bilingual_pair").set_value(pair)
-    at.selectbox(key="bilingual_engine").set_value(engine).run()
+    at.segmented_control(key="bilingual_pair").set_value(pair).run()
     indic = second if first == "English" else first
     at.text_area(key="bilingual_english").set_value(texts.get("English", ""))
     at.text_area(key="bilingual_second").set_value(texts.get(indic, ""))
@@ -282,7 +286,7 @@ for pair, (first, second) in PAIRS.items():
     indic = second if first == "English" else first
 
     # Field order, labels and placeholders, before running anything.
-    at = run_pair(pair, BASELINE, click=False)
+    at = run_pair(pair, click=False)
     boxes = [t for t in at.text_area if t.key in ("bilingual_english", "bilingual_second")]
     check(f"{pair}: fields '{first} Sentence' then '{second} Sentence' with matching placeholders",
           [b.label for b in boxes] == [f"{first} Sentence", f"{second} Sentence"]
@@ -290,15 +294,15 @@ for pair, (first, second) in PAIRS.items():
                                                  app.EXAMPLE_SENTENCES[second]],
           [(b.label, b.placeholder) for b in boxes])
 
-    # Model routing: trained models show which model handled each side.
-    at = run_pair(pair, TRAINED)
+    # Model routing: each side is handled by the fixed bilingual model.
+    at = run_pair(pair)
     tables = [d.value for d in at.dataframe if "Source" in d.value.columns]
     check(f"{pair}: no exceptions, two entity tables", not at.exception and len(tables) == 2,
           [e.value for e in at.exception])
     if len(tables) == 2:
         for language, table in zip((first, second), tables):
             sources = set(table["Source"])
-            check(f"{pair}: {language} sentence handled only by {MODELS[language]}",
+            check(f"{pair}: {language} sentence handled by the baseline multilingual model",
                   all(src.startswith(MODELS[language]) or src.startswith("Configured alias")
                       for src in sources) and any(src.startswith(MODELS[language]) for src in sources),
                   sources)
@@ -313,8 +317,7 @@ for pair, (first, second) in PAIRS.items():
     check(f"{pair}: results labelled with the pair",
           any(c.value == f"Results for {pair}" for c in at.caption))
 
-    # Alignment with the baseline model, which finds both names in all three languages.
-    at = run_pair(pair, BASELINE)
+    # Alignment (same run): the baseline model finds both names in all three languages.
     table = next((d.value for d in at.dataframe if "Status" in d.value.columns), None)
     got = [] if table is None else list(zip(table["English Entity"], table[f"{indic} Entity"],
                                             table["Status"]))
@@ -328,18 +331,18 @@ for pair, (first, second) in PAIRS.items():
           at.segmented_control(key="bilingual_pair").value == pair)
 
 # Validation: language-specific messages, nothing processed.
-at = run_pair("Hindi → English", BASELINE, texts={"Hindi": HI})
+at = run_pair("Hindi → English", texts={"Hindi": HI})
 check("Hindi → English with an empty English field -> 'Enter the English sentence.'",
       any(w.value == "Enter the English sentence." for w in at.warning)
       and not any("Status" in d.value.columns for d in at.dataframe),
       [w.value for w in at.warning])
-at = run_pair("Marathi → English", BASELINE, texts={"English": "   "})
+at = run_pair("Marathi → English", texts={"English": "   "})
 check("whitespace-only inputs -> asks for both sentences in pair order",
       any(w.value == "Enter both the Marathi and the English sentence." for w in at.warning),
       [w.value for w in at.warning])
 
 # Changing the pair moves the fields, never the text.
-at = run_pair("English → Hindi", BASELINE, click=False)
+at = run_pair("English → Hindi", click=False)
 at.segmented_control(key="bilingual_pair").set_value("Hindi → English").run()
 boxes = {t.key: t for t in at.text_area}
 check("switching English → Hindi to Hindi → English keeps each text in its own language field",

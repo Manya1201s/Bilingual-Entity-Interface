@@ -7,7 +7,8 @@ Run from the project folder:
 
     .venv\\Scripts\\python tests\\test_demo.py
 
-Covers: the mixed English + Hindi + Marathi demo paragraph, Marathi
+Covers: the English + Hindi + Marathi demo paragraph (one language at a
+time in the monolingual UI, all at once in the multilingual model), Marathi
 suffixes on मुंबई, full names with titles/initials, and user-facing
 error messages. Exit code is 0 only if every check passes.
 """
@@ -25,6 +26,7 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 APP_PATH = os.path.join(os.path.dirname(HERE), "app.py")
+sys.path.insert(0, os.path.dirname(HERE))
 SAMPLES = os.path.join(HERE, "samples")
 
 DEMO_TEXT = (
@@ -77,11 +79,13 @@ def new_app():
     return at
 
 
-def run_typed(text, threshold=None):
+def run_typed(text, threshold=None, language=None):
     """Type text, click Prepare Sentences, then Extract Entities (like a user).
     Streamlit messages only live for one run, so the Process-step
     messages are captured before NER runs."""
     at = new_app()
+    if language is not None:
+        at.selectbox(key="ner_language").set_value(language).run()
     at.text_area(key="manual_text").set_value(text)
     at.button(key="process_input").click().run()
     at.process_messages = [s.value for s in at.success] + [w.value for w in at.warning]
@@ -97,71 +101,108 @@ def results_table(at):
 
 
 # ------------------------------------------------------------------
-print("\n=== Demo paragraph through the Streamlit UI")
+# The Monolingual NER Extraction workflow uses the language-specific
+# BiLSTM-CRF of the selected input language, so the mixed demo paragraph
+# is entered one language at a time, as a user would. The multilingual
+# model (still used by the bilingual workflow) is checked on the whole
+# mixed paragraph directly.
 
-at = run_typed(DEMO_TEXT)
-check("no exception / error box", not at.exception and not at.error,
-      [e.value for e in at.exception] + [e.value for e in at.error])
-check("Process input: 6 sentences extracted",
-      any("Extracted 6 sentences" in m for m in at.process_messages),
-      at.process_messages)
-check("Extract Entities: 'Entity extraction complete'",
-      any("Entity extraction complete" in s.value for s in at.success))
+import app  # noqa: E402  (bare mode; extract_ner and constants only)
 
-df = results_table(at)
-print(df[["Sentence No.", "Entity", "Entity Type", "Confidence",
-          "Start", "End", "Source"]].to_string())
+DEMO_PARTS = {
+    "English": ("Dr. Priya Mehta visited Geneva. She met Satya Nadella of Microsoft "
+                "and engineers from Infosys.", 2),
+    "Hindi": ("नरेंद्र मोदी दिल्ली में एक बैठक में शामिल हुए। भारतीय रिजर्व बैंक के "
+              "अधिकारी भी वहाँ मौजूद थे।\n"
+              "जेनेवा और जिनेवा एक ही शहर के दो हिंदी नाम हैं।", 3),
+    "Marathi": ("सचिन तेंडुलकर मुंबईत गेले आणि जिनेव्हा येथे परिषद झाली.", 1),
+}
+LANGUAGE_OF = {
+    "Priya Mehta": "English", "Geneva": "English", "Satya Nadella": "English",
+    "Microsoft": "English", "Infosys": "English", "नरेंद्र मोदी": "Hindi",
+    "दिल्ली": "Hindi", "भारतीय रिजर्व बैंक": "Hindi", "जेनेवा": "Hindi",
+    "जिनेवा": "Hindi", "सचिन तेंडुलकर": "Marathi", "मुंबई": "Marathi",
+    "जिनेव्हा": "Marathi",
+}
+MODELS = {"English": "English BiLSTM-CRF (scratch)", "Hindi": "Hindi BiLSTM-CRF (scratch)",
+          "Marathi": "Marathi BiLSTM-CRF (scratch)"}
 
-check("exactly the expected 13 entities, nothing extra",
-      sorted(df["Entity"]) == sorted(e for e, _, _ in EXPECTED),
-      list(df["Entity"]))
+print("\n=== Demo paragraph through the Streamlit UI (one language at a time)")
 
+found_ui = {}
+for language, (text, sentence_count) in DEMO_PARTS.items():
+    at = run_typed(text, language=language)
+    check(f"{language}: no exception / error box", not at.exception and not at.error,
+          [e.value for e in at.exception] + [e.value for e in at.error])
+    check(f"{language}: Prepare Sentences -> {sentence_count} sentences",
+          any(f"Extracted {sentence_count} sentence" in m for m in at.process_messages),
+          at.process_messages)
+    check(f"{language}: 'Entity extraction complete'",
+          any("Entity extraction complete" in s.value for s in at.success))
+    df = results_table(at)
+    print(df[["Sentence No.", "Entity", "Entity Type", "Confidence",
+              "Start", "End", "Source"]].to_string())
+    check(f"{language}: every entity comes from the {language} model (alias may confirm)",
+          all(s.startswith(MODELS[language]) or s == ALIAS for s in df["Source"]),
+          set(df["Source"]))
+    check(f"{language}: spans are exact, no overlaps, no duplicates",
+          all(s[a:b] == e for s, a, b, e in zip(df["Sentence"], df["Start"], df["End"], df["Entity"]))
+          and not df.duplicated(["Sentence No.", "Start", "End"]).any())
+    for entity, entity_type in zip(df["Entity"], df["Entity Type"]):
+        found_ui.setdefault(entity, entity_type)
+    if language == "Marathi":
+        check("sentences displayed unchanged (original Devanagari kept)",
+              "सचिन तेंडुलकर मुंबईत गेले आणि जिनेव्हा येथे परिषद झाली." in list(df["Sentence"]))
+    legend = [e for e in at.expander if e.label == "How to read the results"]
+    check(f"{language}: legend explaining labels / confidence / source is shown",
+          legend and any("Confidence" in m.value and "Source" in m.value
+                         for m in legend[0].markdown),
+          [e.label for e in at.expander])
+
+for entity, label, _ in EXPECTED:
+    language = LANGUAGE_OF[entity]
+    # The Marathi model keeps attached case suffixes (मुंबईत), see below.
+    hits = [e for e, t in found_ui.items() if t == label and e.startswith(entity)]
+    check(f"{entity} -> {label} found by the {language} model", bool(hits), found_ui)
+
+print("\n=== Demo paragraph through the multilingual model (function level)")
+
+rows = [dict(e, Sentence=s) for s in app.split_sentences(DEMO_TEXT)
+        for e in app.extract_ner(s, 0.30, app.MODEL_NAME, "Auto Detect")]
+check("multilingual model: exactly the expected 13 entities, nothing extra",
+      sorted(r["Entity"] for r in rows) == sorted(e for e, _, _ in EXPECTED),
+      [r["Entity"] for r in rows])
 for entity, label, sources in EXPECTED:
-    rows = df[df["Entity"] == entity]
-    if len(rows) != 1:
-        check(f"{entity}: appears exactly once", False, len(rows))
-        continue
-    row = rows.iloc[0]
-    span_ok = row["Sentence"][row["Start"]:row["End"]] == entity
-    check(f"{entity} -> {label} | span [{row['Start']},{row['End']}] | "
-          f"conf {row['Confidence']} | {row['Source']}",
-          row["Entity Type"] == label and span_ok
-          and 0.5 <= row["Confidence"] <= 1.0 and row["Source"] in sources,
-          row.to_dict())
-
-overlap = False
-for _, group in df.groupby("Sentence No."):
-    spans = sorted(zip(group["Start"], group["End"]))
-    overlap |= any(a[1] > b[0] for a, b in zip(spans, spans[1:]))
-check("no overlapping spans within any sentence", not overlap)
-check("no duplicate rows", not df.duplicated(["Sentence No.", "Start", "End"]).any())
-check("sentences displayed unchanged (original Devanagari kept)",
-      "सचिन तेंडुलकर मुंबईत गेले आणि जिनेव्हा येथे परिषद झाली." in list(df["Sentence"]))
-check("metrics show PER 4, LOC 6, ORG 3, Total 13",
-      [m.value for m in at.metric if m.label in ("PER", "LOC", "ORG", "Total Entities")]
-      == ["4", "6", "3", "13"],
-      [(m.label, m.value) for m in at.metric])
-legend = [e for e in at.expander if e.label == "How to read the results"]
-check("legend explaining labels / confidence / source is shown",
-      legend and any("Confidence" in m.value and "Source" in m.value
-                     for m in legend[0].markdown),
-      [e.label for e in at.expander])
+    hits = [r for r in rows if r["Entity"] == entity]
+    check(f"multilingual: {entity} -> {label} from {sorted(sources)}",
+          len(hits) == 1 and hits[0]["Entity Type"] == label
+          and hits[0]["Sentence"][hits[0]["Start"]:hits[0]["End"]] == entity
+          and 0.5 <= hits[0]["Confidence"] <= 1.0 and hits[0]["Source"] in sources,
+          hits)
 
 # ------------------------------------------------------------------
-print("\n=== Marathi suffixes on मुंबई (one sentence per form, via the UI)")
+print("\n=== Marathi suffixes on मुंबई")
 
 FORMS = ["मुंबई", "मुंबईत", "मुंबईमध्ये", "मुंबईला", "मुंबईच्या", "मुंबईची",
          "मुंबईचे", "मुंबईवर", "मुंबईपासून", "मुंबईपर्यंत"]
-at = run_typed("\n".join(f"आम्ही {form} गेलो." for form in FORMS))
+for form in FORMS:
+    sentence = f"आम्ही {form} गेलो."
+    ents = app.extract_ner(sentence, 0.30, app.MODEL_NAME, "Auto Detect")
+    suffix = form[len("मुंबई"):] or "(none)"
+    check(f"multilingual: {form:12} -> 'मुंबई' LOC, suffix '{suffix}' excluded",
+          [(e["Entity"], e["Entity Type"]) for e in ents] == [("मुंबई", "LOC")], ents)
+
+at = run_typed("\n".join(f"आम्ही {form} गेलो." for form in FORMS), language="Marathi")
 df = results_table(at)
 for number, form in enumerate(FORMS, start=1):
     rows = df[df["Sentence No."] == number]
-    ok = (len(rows) == 1 and rows.iloc[0]["Entity"] == "मुंबई"
+    ok = (len(rows) == 1 and rows.iloc[0]["Entity"].startswith("मुंबई")
           and rows.iloc[0]["Entity Type"] == "LOC"
           and rows.iloc[0]["Sentence"] == f"आम्ही {form} गेलो.")
-    suffix = form[len("मुंबई"):] or "(none)"
-    check(f"{form:12} -> entity 'मुंबई' LOC, suffix '{suffix}' excluded, "
-          "sentence unchanged", ok, rows.to_dict("records"))
+    check(f"monolingual UI: {form:12} -> one LOC entity for मुंबई, sentence unchanged",
+          ok, rows.to_dict("records"))
+print("  OBSERVED monolingual (Marathi BiLSTM-CRF) entities, not asserted: "
+      f"{list(df['Entity'])} - the trained model keeps attached case suffixes")
 
 # ------------------------------------------------------------------
 print("\n=== Full names with titles / initials")
@@ -172,16 +213,23 @@ NAMES = [
     ("Mr. Narendra Modi met the press.", "Narendra Modi"),
     ("Prof. Sachin Tendulkar spoke in Mumbai.", "Sachin Tendulkar"),
 ]
-at = run_typed("\n".join(s for s, _ in NAMES))
+at = run_typed("\n".join(s for s, _ in NAMES), language="English")
 check("4 lines stay 4 sentences (titles/initials not split)",
       any("Extracted 4 sentences" in m for m in at.process_messages),
       at.process_messages)
 df = results_table(at)
 for number, (sentence, name) in enumerate(NAMES, start=1):
     rows = df[(df["Sentence No."] == number) & (df["Entity Type"] == "PER")]
-    check(f"{name} -> PER, found by the model (not an alias)",
-          list(rows["Entity"]) == [name]
-          and list(rows["Source"]) == [MODEL], rows.to_dict("records"))
+    check(f"monolingual UI: {name} -> one PER from the English model, title excluded",
+          len(rows) == 1 and name.endswith(rows.iloc[0]["Entity"])
+          and not rows.iloc[0]["Entity"].startswith(("Dr", "Mr", "Prof"))
+          and rows.iloc[0]["Source"] == MODELS["English"], rows.to_dict("records"))
+    ents = [e for e in app.extract_ner(sentence, 0.30, app.MODEL_NAME, "Auto Detect")
+            if e["Entity Type"] == "PER"]
+    check(f"multilingual: {name} -> PER, full name, found by the model (not an alias)",
+          [e["Entity"] for e in ents] == [name] and [e["Source"] for e in ents] == [MODEL], ents)
+print("  OBSERVED monolingual PER entities, not asserted: "
+      f"{list(df[df['Entity Type'] == 'PER']['Entity'])}")
 
 # ------------------------------------------------------------------
 print("\n=== Error / empty-input messages (no tracebacks)")

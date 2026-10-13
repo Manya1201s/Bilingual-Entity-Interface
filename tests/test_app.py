@@ -373,7 +373,7 @@ check("app starts without exceptions", not at.exception, [e.value for e in at.ex
 check("no sidebar error (transformers importable)", not at.sidebar.error,
       [e.value for e in at.sidebar.error])
 check("headers present",
-      [h.value for h in at.header][:2] == ["01 · Input", "04 · Entity Alignment"],
+      [h.value for h in at.header][:3] == ["NER Extraction", "01 · Input", "04 · Entity Alignment"],
       [h.value for h in at.header])
 
 section("Streamlit app: typed input -> sentences -> NER")
@@ -399,7 +399,14 @@ print(df[["Sentence No.", "Entity", "Entity Type", "Confidence", "Source"]].to_s
 locs = df[df["Entity Type"] == "LOC"]["Entity"].tolist()
 check("UI table: all Geneva spellings found as LOC",
       locs == ["Geneva", "जिनेव्हा", "जेनेवा", "जिनेवा", "Geneva", "जिनेव्हा"], locs)
-check("UI table: Kalam PER", "A. P. J. Abdul Kalam" in df[df["Entity Type"] == "PER"]["Entity"].tolist())
+# The monolingual workflow uses the English BiLSTM-CRF here (input language
+# English); it tags "Abdul Kalam" without the initials.
+pers = df[df["Entity Type"] == "PER"]["Entity"].tolist()
+check("UI table: Kalam PER (monolingual English model)",
+      any(p.endswith("Abdul Kalam") for p in pers), pers)
+check("multilingual model keeps the full name 'A. P. J. Abdul Kalam' (PER)",
+      any(e["Entity"] == "A. P. J. Abdul Kalam" and e["Entity Type"] == "PER"
+          for e in ner("Dr. A. P. J. Abdul Kalam visited Geneva.")))
 check("UI table: no duplicate rows", not df.duplicated(["Sentence No.", "Start", "End"]).any())
 muril_notices = [i.value for i in at.info if "MuRIL" in i.value or "muril" in i.value]
 check("no MuRIL notice (unusable generic-label model is no longer configured)",

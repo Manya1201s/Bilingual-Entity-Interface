@@ -246,13 +246,12 @@ check("sidebar no longer advertises the unusable Hindi fallback",
       not any("Hindi fallback" in c.value for c in at.sidebar.caption))
 
 for engine, caption_model, row_source in [
-    (app.NER_ENGINES[0], f"Baseline {app.MODEL_NAME}", app.BASELINE_SOURCE),
     (app.TRAINED_ENGINE, "Hindi BiLSTM-CRF (scratch)", "Hindi BiLSTM-CRF (scratch)"),
 ]:
+    # Monolingual workflow: fixed to the language-specific trained models.
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.selectbox(key="ner_language").set_value("Hindi")
-    at.selectbox(key="ner_engine").set_value(engine).run()
+    at.selectbox(key="ner_language").set_value("Hindi").run()
     at.text_area(key="manual_text").set_value(HINDI_CASES[1][0])
     at.button(key="process_input").click().run()
     caption_ok = any(f"NER model for this input: {caption_model}" in c.value for c in at.caption)
@@ -280,11 +279,10 @@ def whole_words(text, rows):
 
 SP = "Sentence Pairs"
 for language in app.NER_LANGUAGES:
-    for engine in app.NER_ENGINES:
+    for engine in [app.TRAINED_ENGINE]:  # monolingual: fixed trained models
         at = AppTest.from_file(APP_PATH, default_timeout=900)
         at.run()
-        at.selectbox(key="ner_language").set_value(language)
-        at.selectbox(key="ner_engine").set_value(engine).run()
+        at.selectbox(key="ner_language").set_value(language).run()
         at.text_area(key="manual_text").set_value(SP)
         at.button(key="process_input").click().run()
         at.button(key="run_ner").click().run()
@@ -296,11 +294,10 @@ for language in app.NER_LANGUAGES:
             print(f"  OBSERVED model-level whole-phrase prediction (not a span bug): "
                   f"{tables[0][['Entity', 'Entity Type', 'Confidence', 'Source']].values.tolist()}")
 
-for engine in app.NER_ENGINES:
+for engine in app.NER_ENGINES[:1]:  # bilingual: fixed baseline model
     at = AppTest.from_file(APP_PATH, default_timeout=900)
     at.run()
-    at.segmented_control(key="bilingual_pair").set_value("English → Marathi")
-    at.selectbox(key="bilingual_engine").set_value(engine).run()
+    at.segmented_control(key="bilingual_pair").set_value("English → Marathi").run()
     at.text_area(key="bilingual_english").set_value(SP)
     at.text_area(key="bilingual_second").set_value("वाक्य जोड्या")
     at.button(key="run_bilingual").click().run()
