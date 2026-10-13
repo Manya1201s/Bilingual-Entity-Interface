@@ -1,0 +1,80 @@
+{
+  "method": "translit_score (alignment/aligner.py) on Wikidata-verified gold pairs; negatives = other target-side NER entities in the same sentence; thresholds chosen on validation (hi+mr pooled), reported on test",
+  "review_threshold": 0.64,
+  "match_threshold": 0.73,
+  "target_precision_for_match": 0.95,
+  "validation": {
+    "review": {
+      "precision": 0.9228,
+      "recall": 0.8386,
+      "f1": 0.8787,
+      "tp": 478,
+      "fp": 40,
+      "fn": 92
+    },
+    "match": {
+      "precision": 0.9514,
+      "recall": 0.7895,
+      "f1": 0.8629,
+      "tp": 450,
+      "fp": 23,
+      "fn": 120
+    }
+  },
+  "test": {
+    "hi": {
+      "review": {
+        "precision": 0.9693,
+        "recall": 0.7933,
+        "f1": 0.8725,
+        "tp": 284,
+        "fp": 9,
+        "fn": 74
+      },
+      "match": {
+        "precision": 0.9964,
+        "recall": 0.7682,
+        "f1": 0.8675,
+        "tp": 275,
+        "fp": 1,
+        "fn": 83
+      }
+    },
+    "mr": {
+      "review": {
+        "precision": 0.9132,
+        "recall": 0.8969,
+        "f1": 0.905,
+        "tp": 200,
+        "fp": 19,
+        "fn": 23
+      },
+      "match": {
+        "precision": 0.9697,
+        "recall": 0.861,
+        "f1": 0.9121,
+        "tp": 192,
+        "fp": 6,
+        "fn": 31
+      }
+    }
+  },
+  "pairs": {
+    "hi/validation": {
+      "positive": 381,
+      "negative": 806
+    },
+    "hi/test": {
+      "positive": 358,
+      "negative": 739
+    },
+    "mr/validation": {
+      "positive": 189,
+      "negative": 358
+    },
+    "mr/test": {
+      "positive": 223,
+      "negative": 516
+    }
+  }
+}

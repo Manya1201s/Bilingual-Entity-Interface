@@ -1,0 +1,89 @@
+{
+  "model_type": "Transformer encoder-decoder trained from scratch (no pretrained weights)",
+  "source_language": "en",
+  "target_language": "mr",
+  "model": {
+    "d_model": 256,
+    "heads": 4,
+    "encoder_layers": 3,
+    "decoder_layers": 3,
+    "ffn_dim": 1024,
+    "dropout": 0.3,
+    "max_positions": 512,
+    "max_source_tokens": 128
+  },
+  "parameters": 9626624,
+  "vocabulary": {
+    "type": "SentencePiece unigram, learned on the training split only",
+    "en": 8000,
+    "mr": 8000
+  },
+  "training": {
+    "train_pairs": 50000,
+    "validation_pairs": 1000,
+    "pairs_truncated_at_max_len": 2,
+    "epochs_max": 10,
+    "patience": 3,
+    "batch_size_sentences": 64,
+    "optimizer": "Adam(0.9, 0.98, eps 1e-9)",
+    "peak_learning_rate": 0.0007,
+    "schedule": "linear warm-up 1000 steps, then inverse square root",
+    "label_smoothing": 0.1,
+    "gradient_clip_norm": 1.0,
+    "seed": 42,
+    "threads": 4,
+    "hardware": "CPU only",
+    "selection": "lowest validation cross-entropy",
+    "seconds": 58169.6,
+    "epochs_run": 5
+  },
+  "log": [
+    {
+      "epoch": 1,
+      "step": 782,
+      "train_loss": 7.2443,
+      "val_loss": 6.5273,
+      "val500_bleu_greedy": 0.04,
+      "val500_chrf++_greedy": 3.01,
+      "epoch_minutes": 49.6
+    },
+    {
+      "epoch": 2,
+      "step": 1564,
+      "train_loss": 6.3007,
+      "val_loss": 5.7038,
+      "val500_bleu_greedy": 0.36,
+      "val500_chrf++_greedy": 8.51,
+      "epoch_minutes": 49.3
+    },
+    {
+      "epoch": 3,
+      "step": 2346,
+      "train_loss": 5.812,
+      "val_loss": 5.3298,
+      "val500_bleu_greedy": 0.94,
+      "val500_chrf++_greedy": 11.22,
+      "epoch_minutes": 787.1
+    },
+    {
+      "epoch": 4,
+      "step": 3128,
+      "train_loss": 5.5369,
+      "val_loss": 5.0929,
+      "val500_bleu_greedy": 1.1,
+      "val500_chrf++_greedy": 13.02,
+      "epoch_minutes": 46.3
+    },
+    {
+      "epoch": 5,
+      "step": 3910,
+      "train_loss": 5.3503,
+      "val_loss": 4.9608,
+      "val500_bleu_greedy": 2.2,
+      "val500_chrf++_greedy": 15.29,
+      "epoch_minutes": 37.2
+    }
+  ],
+  "best_epoch": 5,
+  "best_val_loss": 4.9608
+}

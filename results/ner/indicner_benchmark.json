@@ -1,0 +1,154 @@
+{
+  "hindi": {
+    "test_file": "training/data/hindi/test.jsonl",
+    "sentences_scored": 864,
+    "gold_entities": 1929,
+    "indicner_seconds": 69.1,
+    "inference_stats": {
+      "truncated_sentences": 0,
+      "words_without_subword": 0
+    },
+    "indicner": {
+      "PER": {
+        "precision": 0.8752,
+        "recall": 0.9228,
+        "f1": 0.8983,
+        "support": 790
+      },
+      "ORG": {
+        "precision": 0.6959,
+        "recall": 0.7848,
+        "f1": 0.7377,
+        "support": 525
+      },
+      "LOC": {
+        "precision": 0.8179,
+        "recall": 0.8192,
+        "f1": 0.8186,
+        "support": 614
+      },
+      "micro": {
+        "precision": 0.8059,
+        "recall": 0.8523,
+        "f1": 0.8284,
+        "support": 1929
+      }
+    },
+    "ours": {
+      "PER": {
+        "precision": 0.8337,
+        "recall": 0.8506,
+        "f1": 0.8421,
+        "support": 790
+      },
+      "ORG": {
+        "precision": 0.7259,
+        "recall": 0.7314,
+        "f1": 0.7287,
+        "support": 525
+      },
+      "LOC": {
+        "precision": 0.7864,
+        "recall": 0.8094,
+        "f1": 0.7978,
+        "support": 614
+      },
+      "micro": {
+        "precision": 0.7895,
+        "recall": 0.8051,
+        "f1": 0.7972,
+        "support": 1929
+      }
+    },
+    "indicner_f1_95ci": [
+      0.8092,
+      0.8471
+    ],
+    "ours_f1_95ci": [
+      0.778,
+      0.8174
+    ],
+    "diff_ours_minus_indicner": -0.0312,
+    "diff_95ci_paired_bootstrap": [
+      -0.0472,
+      -0.0161
+    ],
+    "share_of_resamples_ours_better": 0.0
+  },
+  "marathi": {
+    "test_file": "training/data/marathi/test.jsonl",
+    "sentences_scored": 1060,
+    "gold_entities": 1676,
+    "indicner_seconds": 56.2,
+    "inference_stats": {
+      "truncated_sentences": 0,
+      "words_without_subword": 0
+    },
+    "indicner": {
+      "PER": {
+        "precision": 0.8866,
+        "recall": 0.8551,
+        "f1": 0.8706,
+        "support": 704
+      },
+      "ORG": {
+        "precision": 0.6781,
+        "recall": 0.6409,
+        "f1": 0.659,
+        "support": 401
+      },
+      "LOC": {
+        "precision": 0.8542,
+        "recall": 0.8004,
+        "f1": 0.8264,
+        "support": 571
+      },
+      "micro": {
+        "precision": 0.8261,
+        "recall": 0.7852,
+        "f1": 0.8051,
+        "support": 1676
+      }
+    },
+    "ours": {
+      "PER": {
+        "precision": 0.8833,
+        "recall": 0.8494,
+        "f1": 0.866,
+        "support": 704
+      },
+      "ORG": {
+        "precision": 0.713,
+        "recall": 0.6135,
+        "f1": 0.6595,
+        "support": 401
+      },
+      "LOC": {
+        "precision": 0.8261,
+        "recall": 0.7653,
+        "f1": 0.7945,
+        "support": 571
+      },
+      "micro": {
+        "precision": 0.8259,
+        "recall": 0.7643,
+        "f1": 0.7939,
+        "support": 1676
+      }
+    },
+    "indicner_f1_95ci": [
+      0.7834,
+      0.8259
+    ],
+    "ours_f1_95ci": [
+      0.774,
+      0.8142
+    ],
+    "diff_ours_minus_indicner": -0.0112,
+    "diff_95ci_paired_bootstrap": [
+      -0.0264,
+      0.0046
+    ],
+    "share_of_resamples_ours_better": 0.086
+  }
+}

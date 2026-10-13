@@ -1,0 +1,33 @@
+
+# Python environments
+.venv/
+.venv312/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Editor and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+
+
+# Large trained models and checkpoints
+models/**/*.safetensors
+models/**/*.pt
+models/**/*.pth
+models/**/*.bin

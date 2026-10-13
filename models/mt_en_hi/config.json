@@ -1,0 +1,134 @@
+{
+  "model_type": "Transformer encoder-decoder trained from scratch (no pretrained weights)",
+  "source_language": "en",
+  "target_language": "hi",
+  "model": {
+    "d_model": 256,
+    "heads": 4,
+    "encoder_layers": 3,
+    "decoder_layers": 3,
+    "ffn_dim": 1024,
+    "dropout": 0.3,
+    "max_positions": 512,
+    "max_source_tokens": 128
+  },
+  "parameters": 9626624,
+  "vocabulary": {
+    "type": "SentencePiece unigram, learned on the training split only",
+    "en": 8000,
+    "hi": 8000
+  },
+  "training": {
+    "train_pairs": 50000,
+    "validation_pairs": 1000,
+    "pairs_truncated_at_max_len": 7,
+    "epochs_max": 10,
+    "patience": 3,
+    "batch_size_sentences": 64,
+    "optimizer": "Adam(0.9, 0.98, eps 1e-9)",
+    "peak_learning_rate": 0.0007,
+    "schedule": "linear warm-up 1000 steps, then inverse square root",
+    "label_smoothing": 0.1,
+    "gradient_clip_norm": 1.0,
+    "seed": 42,
+    "threads": 4,
+    "hardware": "CPU only",
+    "selection": "lowest validation cross-entropy",
+    "seconds": 86880.6,
+    "epochs_run": 10
+  },
+  "log": [
+    {
+      "epoch": 1,
+      "step": 782,
+      "train_loss": 7.0965,
+      "val_loss": 5.9801,
+      "val500_bleu_greedy": 0.06,
+      "val500_chrf++_greedy": 4.65,
+      "epoch_minutes": 65.5
+    },
+    {
+      "epoch": 2,
+      "step": 1564,
+      "train_loss": 5.9391,
+      "val_loss": 5.1765,
+      "val500_bleu_greedy": 0.74,
+      "val500_chrf++_greedy": 10.89,
+      "epoch_minutes": 806.4
+    },
+    {
+      "epoch": 3,
+      "step": 2346,
+      "train_loss": 5.4866,
+      "val_loss": 4.8667,
+      "val500_bleu_greedy": 1.2,
+      "val500_chrf++_greedy": 14.04,
+      "epoch_minutes": 66.7
+    },
+    {
+      "epoch": 4,
+      "step": 3128,
+      "train_loss": 5.2571,
+      "val_loss": 4.6741,
+      "val500_bleu_greedy": 2.2,
+      "val500_chrf++_greedy": 16.19,
+      "epoch_minutes": 62.3
+    },
+    {
+      "epoch": 5,
+      "step": 3910,
+      "train_loss": 5.1057,
+      "val_loss": 4.5594,
+      "val500_bleu_greedy": 2.9,
+      "val500_chrf++_greedy": 17.53,
+      "epoch_minutes": 65.3
+    },
+    {
+      "epoch": 6,
+      "step": 4692,
+      "train_loss": 4.9924,
+      "val_loss": 4.447,
+      "val500_bleu_greedy": 2.94,
+      "val500_chrf++_greedy": 19.05,
+      "epoch_minutes": 38.8
+    },
+    {
+      "epoch": 7,
+      "step": 5474,
+      "train_loss": 4.9015,
+      "val_loss": 4.3699,
+      "val500_bleu_greedy": 4.14,
+      "val500_chrf++_greedy": 20.71,
+      "epoch_minutes": 37.7
+    },
+    {
+      "epoch": 8,
+      "step": 6256,
+      "train_loss": 4.8254,
+      "val_loss": 4.3179,
+      "val500_bleu_greedy": 3.92,
+      "val500_chrf++_greedy": 20.94,
+      "epoch_minutes": 40.9
+    },
+    {
+      "epoch": 9,
+      "step": 7038,
+      "train_loss": 4.7604,
+      "val_loss": 4.2638,
+      "val500_bleu_greedy": 4.57,
+      "val500_chrf++_greedy": 21.52,
+      "epoch_minutes": 212.2
+    },
+    {
+      "epoch": 10,
+      "step": 7820,
+      "train_loss": 4.7039,
+      "val_loss": 4.2238,
+      "val500_bleu_greedy": 4.71,
+      "val500_chrf++_greedy": 21.61,
+      "epoch_minutes": 52.0
+    }
+  ],
+  "best_epoch": 10,
+  "best_val_loss": 4.2238
+}

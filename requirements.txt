@@ -1,0 +1,23 @@
+# Versions verified with Python 3.14 on Windows.
+# CPU-only PyTorch (smaller download). Install with:
+#   python -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+streamlit==1.64.0
+pandas==3.0.6
+numpy==2.5.3
+torch==2.14.1
+transformers==5.18.0
+tokenizers==0.23.2
+# Dataset download in training/prepare_data.py (already a transformers dependency)
+huggingface_hub==1.33.0
+# The NER model ships sentencepiece.bpe.model (no tokenizer.json);
+# sentencepiece + protobuf are needed to build its tokenizer.
+sentencepiece==0.2.2
+protobuf==7.36.2
+python-docx==1.2.0
+pypdf==6.19.0
+# Excel uploads: .xlsx (openpyxl) and .xls (xlrd)
+openpyxl==3.1.5
+xlrd==2.0.2
+# MT / alignment / anonymisation research code (mt/, alignment/, anonymisation/)
+sacrebleu==2.6.0
+pyarrow==25.0.1

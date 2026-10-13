@@ -1,0 +1,72 @@
+
+######## HINDI  (recomputed F1 0.7972, gold entities 1929)
+  correct                       1553  (80.5% of gold)
+  right span, wrong type          34  (1.8% of gold)
+  right type, wrong boundary     163  (8.4% of gold)
+  wrong boundary and type         48  (2.5% of gold)
+  missed                         131  (6.8% of gold)
+  spurious (no gold overlap)     180
+  type confusions (gold -> predicted): {('ORG', 'LOC'): 8, ('LOC', 'ORG'): 8, ('PER', 'ORG'): 6, ('ORG', 'PER'): 5, ('PER', 'LOC'): 4, ('LOC', 'PER'): 3}
+  missed by type: {'LOC': 43, 'ORG': 54, 'PER': 34} | spurious by type: {'ORG': 70, 'LOC': 56, 'PER': 54}
+  recall, entities all words seen in training: 1295/1572 = 82.4%
+  recall, entities with an unseen word: 258/357 = 72.3%
+  recall, 1-word entities: 728/899 = 81.0%
+  recall, 2-word entities: 630/744 = 84.7%
+  recall, 3+-word entities: 195/286 = 68.2%
+  e.g. LOC -> ORG: ['राष्ट्रपति भवन', 'यूपी', 'सुमावली', 'मेहगांव', 'दिमनी']
+  e.g. ORG -> LOC: ['सिंदरी', 'मुतंगी मस्जिद', 'होली एंजेल्स के आरसी चर्च', 'बायट्सफॉरऑल', 'इंडियन लेंग्वेज रिसोर्सेस सेंटर']
+  e.g. ORG -> PER: ['वाजपेयी', 'Der Spiegel', 'परमेश्वर', 'विजिलेंस', 'अन्ना']
+  e.g. PER -> ORG: ['जॉनसन', 'ओपीएस भदौरिया', 'साई', 'देवीलाल', 'बलिया']
+  e.g. boundary ORG: ['रिलायंस  => predicted: रिलायंस रिलायंस', 'मोजर बीयर पावर  => predicted: बिजली मोजर बीयर पावर', 'कृष्णापत्तनम पावर कॉरपोरेशन लिमिटेड  => predicted: बिजली कृष्णापत्तनम पावर कॉरपोरेशन लिमिटेड', 'केएसके महानदी पावर  => predicted: बिजली केएसके महानदी पावर लिमिटेड', 'कांग्रेस  => predicted: कांग्रेस विधान परिषद']
+  e.g. missed ORG: ['इनेलो', 'राष्ट्रीय स्वच्छ विद्यालय', 'केंद्रीय पर्यावरण', 'नेस्डैक', 'यूएससी']
+  e.g. spurious LOC: ['भारत', 'निस', 'कुल्लू', 'मुक़ाबले', 'मंडी']
+  e.g. spurious ORG: ['सी', 'मेक इन इंडिया', 'स्वच्छ भारत मिशन', 'बीए', 'एनआरसी']
+  e.g. spurious PER: ['श्रीमती', 'ईश्वर', 'एंडर', 'Dinka language', 'मसीह']
+
+######## MARATHI  (recomputed F1 0.7939, gold entities 1676)
+  correct                       1281  (76.4% of gold)
+  right span, wrong type          29  (1.7% of gold)
+  right type, wrong boundary     137  (8.2% of gold)
+  wrong boundary and type         28  (1.7% of gold)
+  missed                         201  (12.0% of gold)
+  spurious (no gold overlap)      97
+  type confusions (gold -> predicted): {('LOC', 'PER'): 7, ('PER', 'LOC'): 6, ('ORG', 'LOC'): 6, ('ORG', 'PER'): 5, ('LOC', 'ORG'): 3, ('PER', 'ORG'): 2}
+  missed by type: {'ORG': 77, 'LOC': 80, 'PER': 44} | spurious by type: {'ORG': 40, 'LOC': 31, 'PER': 26}
+  recall, entities all words seen in training: 1091/1355 = 80.5%
+  recall, entities with an unseen word: 190/321 = 59.2%
+  recall, 1-word entities: 725/957 = 75.8%
+  recall, 2-word entities: 480/580 = 82.8%
+  recall, 3+-word entities: 76/139 = 54.7%
+  e.g. LOC -> ORG: ['संयुक्त राज्यांच्या', 'वांद्रे पूर्वेतून', 'माता वैष्णोदेवी मंदीर']
+  e.g. ORG -> LOC: ['तेलंगणात', 'फोर्टिस रुग्णालयात', 'मिलिटरी हॉस्पिटलमध्ये', 'ओशिवरा पोलीस ठाण्यात', 'राष्ट्रपती भवनात']
+  e.g. ORG -> PER: ['शिवसेनेची', 'यहोवावर', 'परमेश्वर', 'इफिस', 'यहोवाने']
+  e.g. PER -> ORG: ['व्हॉयेजर', 'माक्वी']
+  e.g. boundary ORG: ['राष्ट्रवादी काँग्रेस  => predicted: राष्ट्रवादी', 'राष्ट्रवादी काँग्रेसचे  => predicted: राष्ट्रवादी', 'आयुष मंत्रालय  => predicted: आयुष मंत्रालय योग प्रशिक्षणासाठी आयुष मंत्रालय', 'श्रम मंत्रालय  => predicted: अन्न व पुरवठा आणि श्रम मंत्रालय', 'आयएनएस  => predicted: आयएनएस राणा']
+  e.g. missed ORG: ['ट्विटर', 'केंद्रीय', 'हरित तंत्रज्ञान', 'कौशल्य विकास आणि उद्यमशीलता', 'दूरदर्शन']
+  e.g. spurious LOC: ['भारताच्या', 'बिहान', 'ससून रूग्णालयामध्ये', 'सनत नगर', 'क्रिप्टोकरन्सी']
+  e.g. spurious ORG: ['माहिम पोलीस', 'अर्थ आणि नियोजन', 'उर्जा', 'रेल्वे', 'कार्यकारी मंडळ']
+  e.g. spurious PER: ['देव', 'यरहमेलची', 'हुरडा', 'मॅनजरसह', 'सुर्यवंशी']
+
+######## ENGLISH  (recomputed F1 0.8605, gold entities 4946)
+  correct                       4235  (85.6% of gold)
+  right span, wrong type         313  (6.3% of gold)
+  right type, wrong boundary      85  (1.7% of gold)
+  wrong boundary and type         48  (1.0% of gold)
+  missed                         265  (5.4% of gold)
+  spurious (no gold overlap)     225
+  type confusions (gold -> predicted): {('LOC', 'ORG'): 80, ('PER', 'ORG'): 78, ('ORG', 'LOC'): 57, ('ORG', 'PER'): 56, ('PER', 'LOC'): 28, ('LOC', 'PER'): 14}
+  missed by type: {'LOC': 66, 'PER': 75, 'ORG': 124} | spurious by type: {'ORG': 156, 'PER': 29, 'LOC': 40}
+  recall, entities all words seen in training: 2469/2723 = 90.7%
+  recall, entities with an unseen word: 1766/2223 = 79.4%
+  recall, 1-word entities: 2558/3049 = 83.9%
+  recall, 2-word entities: 1471/1628 = 90.4%
+  recall, 3+-word entities: 206/269 = 76.6%
+  e.g. LOC -> ORG: ['West Indies', 'Uzbekistan', 'Wimbledon', 'Syria', 'Japan']
+  e.g. ORG -> LOC: ['Santa Fe', 'Zywiec', 'Tasmania', 'Barbarians', 'Newmont']
+  e.g. ORG -> PER: ['Santa Fe', 'Vicenza', 'Napoli', 'Norilsk', 'Kinder Bologna']
+  e.g. PER -> ORG: ['Mills', 'Clarke', 'Van Boxmeer', 'Bitar', 'Albright']
+  e.g. boundary ORG: ['Real Madrid  => predicted: Real Madrid Real Madrid', 'Barcelona  => predicted: Real Madrid Barcelona', 'Real Madrid  => predicted: Real Madrid Barcelona', 'Barcelona  => predicted: Barcelona Barcelona', 'Sporting  => predicted: Sporting Gijon']
+  e.g. missed ORG: ['Bre-X', 'Newmont', 'NYMEX', 'League', 'Norilsk']
+  e.g. spurious LOC: ['SHEFFIELD', 'Choice', 'PLAYOFF', 'Rose Bowl', 'PAPER']
+  e.g. spurious ORG: ['Choice', 'Select', 'PF PA', 'EASTERN CONFERENCE', 'WESTERN CONFERENCE']
+  e.g. spurious PER: ['UNCAPPED', 'CLOBBER', 'Lombardi Award', 'Starbuck', 'DEPRIVES']

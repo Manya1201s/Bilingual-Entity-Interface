@@ -1,0 +1,25 @@
+[server]
+# Streamlit's development file watcher scans every imported module after
+# each run. With transformers installed this touches its lazily-loaded
+# image-model modules, which try to import torchvision (not needed for
+# this text-only app) and flood the console with ~100 harmless
+# "No module named 'torchvision'" tracebacks while slowing reruns.
+# Disabling the watcher removes this. Restart the app after editing app.py.
+fileWatcherType = "none"
+
+[client]
+# Unexpected errors show a short message on the page; the full traceback
+# still goes to the terminal log for debugging.
+showErrorDetails = "none"
+
+[theme]
+# Dark navy / teal theme. Setting it here (not only in CSS) makes Streamlit's
+# own widgets - tables, inputs, sliders, tabs - use the same palette instead
+# of the viewer's light/dark browser setting.
+base = "dark"
+primaryColor = "#14b8a6"
+backgroundColor = "#0b1220"
+secondaryBackgroundColor = "#101b2d"
+textColor = "#e8eef8"
+borderColor = "#263b55"
+baseRadius = "medium"

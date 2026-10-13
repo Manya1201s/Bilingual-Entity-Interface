@@ -1,0 +1,86 @@
+{
+  "language": "english",
+  "source": {
+    "repo": "tner/conll2003",
+    "url": "https://huggingface.co/datasets/tner/conll2003",
+    "license": "CoNLL-2003 annotations (University of Antwerp); the text is Reuters Corpus RCV1, (c) Reuters, available for research purposes under the NIST/Reuters agreement. Use for research and education only; do not redistribute the raw text.",
+    "paper": "Tjong Kim Sang & De Meulder, 2003, 'Introduction to the CoNLL-2003 Shared Task'",
+    "annotation": "manually annotated (train/validation/test)"
+  },
+  "labels": [
+    "O",
+    "B-PER",
+    "I-PER",
+    "B-ORG",
+    "I-ORG",
+    "B-LOC",
+    "I-LOC"
+  ],
+  "label_mapping": "B-/I- PER, ORG, LOC kept; every other entity type (e.g. MISC) -> O; invalid I- tags -> B- (conlleval rule)",
+  "note": "MISC entities mapped to O (outside the PER/ORG/LOC scope)",
+  "splits": {
+    "validation": {
+      "original_sentences": 3250,
+      "sentences": 3250,
+      "tokens": 51360,
+      "dropped_empty_or_malformed": 0,
+      "removed_train_overlap": 0,
+      "bio_repairs": 0,
+      "mapped_to_O": {
+        "B-MISC": 922,
+        "I-MISC": 346
+      },
+      "label_counts": {
+        "O": 44025,
+        "B-ORG": 1341,
+        "B-LOC": 1837,
+        "B-PER": 1842,
+        "I-PER": 1307,
+        "I-LOC": 257,
+        "I-ORG": 751
+      }
+    },
+    "test": {
+      "original_sentences": 3453,
+      "sentences": 3453,
+      "tokens": 46427,
+      "dropped_empty_or_malformed": 0,
+      "removed_train_overlap": 0,
+      "bio_repairs": 0,
+      "mapped_to_O": {
+        "B-MISC": 702,
+        "I-MISC": 216
+      },
+      "label_counts": {
+        "O": 39233,
+        "B-LOC": 1668,
+        "B-PER": 1617,
+        "I-PER": 1156,
+        "I-LOC": 257,
+        "B-ORG": 1661,
+        "I-ORG": 835
+      }
+    },
+    "train": {
+      "original_sentences": 14041,
+      "sentences": 13492,
+      "tokens": 200951,
+      "dropped_empty_or_malformed": 0,
+      "removed_train_overlap": 549,
+      "bio_repairs": 0,
+      "mapped_to_O": {
+        "B-MISC": 3438,
+        "I-MISC": 1155
+      },
+      "label_counts": {
+        "B-ORG": 6242,
+        "O": 171706,
+        "B-PER": 6581,
+        "I-PER": 4512,
+        "B-LOC": 7102,
+        "I-ORG": 3661,
+        "I-LOC": 1147
+      }
+    }
+  }
+}

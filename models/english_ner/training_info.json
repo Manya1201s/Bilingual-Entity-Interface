@@ -1,0 +1,80 @@
+{
+  "model_type": "bert-base-cased fine-tuned for token classification (transfer learning)",
+  "base_model": "bert-base-cased",
+  "language": "english",
+  "labels": [
+    "O",
+    "B-PER",
+    "I-PER",
+    "B-ORG",
+    "I-ORG",
+    "B-LOC",
+    "I-LOC"
+  ],
+  "parameters": 107725063,
+  "training": {
+    "dataset": "CoNLL-2003 (tner/conll2003), MISC -> O",
+    "train_sentences": 13492,
+    "validation_sentences": 3250,
+    "epochs": 3,
+    "batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 5e-05,
+    "weight_decay": 0.01,
+    "warmup_fraction": 0.1,
+    "schedule": "linear warm-up then linear decay",
+    "max_length": 256,
+    "label_alignment": "first sub-word of each word; others ignored (-100)",
+    "gradient_clip_norm": 1.0,
+    "seed": 42,
+    "threads": 8,
+    "hardware": "CPU only",
+    "selection": "best validation micro entity F1",
+    "resumed_after_epoch": 1,
+    "resume_note": "weights, learning-rate schedule and data order restored; AdamW moment estimates re-initialised",
+    "seconds": 14232.7
+  },
+  "log": [
+    {
+      "epoch": 1,
+      "train_loss": 0.1935,
+      "dev_precision": 0.9347,
+      "dev_recall": 0.9522,
+      "dev_f1": 0.9434,
+      "dev_per_type_f1": {
+        "PER": 0.9628,
+        "ORG": 0.9067,
+        "LOC": 0.951
+      },
+      "epoch_seconds": 6597.7
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.0314,
+      "dev_precision": 0.9469,
+      "dev_recall": 0.9512,
+      "dev_f1": 0.949,
+      "dev_per_type_f1": {
+        "PER": 0.9711,
+        "ORG": 0.9055,
+        "LOC": 0.9591
+      },
+      "epoch_seconds": 3653.1
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.0106,
+      "dev_precision": 0.9516,
+      "dev_recall": 0.9562,
+      "dev_f1": 0.9539,
+      "dev_per_type_f1": {
+        "PER": 0.9737,
+        "ORG": 0.9163,
+        "LOC": 0.9619
+      },
+      "epoch_seconds": 3979.1
+    }
+  ],
+  "best_epoch": 3,
+  "best_dev_f1": 0.9539
+}

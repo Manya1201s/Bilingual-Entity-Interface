@@ -1,0 +1,77 @@
+{
+  "language": "marathi",
+  "source": {
+    "repo": "ai4bharat/naamapadam",
+    "url": "https://huggingface.co/datasets/ai4bharat/naamapadam",
+    "license": "CC0-1.0 (public domain dedication)",
+    "paper": "Mhaske et al., 2023, 'Naamapadam: A Large-Scale Named Entity Annotated Data for Indic Languages' (ACL 2023)",
+    "annotation": "train/validation: entities projected from English via word alignment on the Samanantar parallel corpus (machine-generated, 'silver'); test: manually annotated"
+  },
+  "labels": [
+    "O",
+    "B-PER",
+    "I-PER",
+    "B-ORG",
+    "I-ORG",
+    "B-LOC",
+    "I-LOC"
+  ],
+  "label_mapping": "B-/I- PER, ORG, LOC kept; every other entity type (e.g. MISC) -> O; invalid I- tags -> B- (conlleval rule)",
+  "note": "train = random subset (seed 13) of 455248 silver sentences; validation = full silver set; test = full gold set",
+  "splits": {
+    "validation": {
+      "original_sentences": 2300,
+      "sentences": 2300,
+      "tokens": 28785,
+      "dropped_empty_or_malformed": 0,
+      "removed_train_overlap": 0,
+      "bio_repairs": 8,
+      "mapped_to_O": {},
+      "label_counts": {
+        "B-LOC": 1159,
+        "O": 22414,
+        "B-ORG": 873,
+        "B-PER": 1818,
+        "I-PER": 1575,
+        "I-ORG": 672,
+        "I-LOC": 274
+      }
+    },
+    "test": {
+      "original_sentences": 1080,
+      "sentences": 1060,
+      "tokens": 11833,
+      "dropped_empty_or_malformed": 20,
+      "removed_train_overlap": 0,
+      "bio_repairs": 20,
+      "mapped_to_O": {},
+      "label_counts": {
+        "B-ORG": 401,
+        "I-ORG": 291,
+        "O": 9233,
+        "B-LOC": 571,
+        "I-LOC": 92,
+        "B-PER": 704,
+        "I-PER": 541
+      }
+    },
+    "train": {
+      "original_sentences": 455248,
+      "sentences": 150000,
+      "tokens": 1836529,
+      "dropped_empty_or_malformed": 0,
+      "removed_train_overlap": 28,
+      "bio_repairs": 606,
+      "mapped_to_O": {},
+      "label_counts": {
+        "O": 1434890,
+        "B-LOC": 73248,
+        "B-PER": 112747,
+        "I-PER": 96689,
+        "B-ORG": 54958,
+        "I-LOC": 17587,
+        "I-ORG": 46410
+      }
+    }
+  }
+}

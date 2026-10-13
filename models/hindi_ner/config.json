@@ -1,0 +1,151 @@
+{
+  "model_type": "BiLSTM-CRF trained from scratch (no pretrained embeddings or language model)",
+  "language": "hindi",
+  "labels": [
+    "O",
+    "B-PER",
+    "I-PER",
+    "B-ORG",
+    "I-ORG",
+    "B-LOC",
+    "I-LOC"
+  ],
+  "model": {
+    "embedding_dim": 128,
+    "hidden_dim": 128,
+    "num_layers": 2,
+    "dropout": 0.2,
+    "use_chars": true,
+    "char_dim": 30,
+    "char_filters": 50
+  },
+  "parameters": 5396278,
+  "vocab_size": 36490,
+  "char_vocab_size": 283,
+  "training": {
+    "train_sentences": 100000,
+    "validation_sentences": 13460,
+    "epochs_max": 8,
+    "patience": 2,
+    "batch_size": 32,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "gradient_clip_norm": 5.0,
+    "word_dropout": 0.05,
+    "min_word_freq": 2,
+    "seed": 42,
+    "threads": 4,
+    "hardware": "CPU only",
+    "selection": "best validation micro entity F1",
+    "seconds": 19253.2,
+    "epochs_run": 8
+  },
+  "log": [
+    {
+      "epoch": 1,
+      "train_loss": 5.9539,
+      "dev_precision": 0.7042,
+      "dev_recall": 0.703,
+      "dev_f1": 0.7036,
+      "dev_per_type_f1": {
+        "PER": 0.7448,
+        "ORG": 0.604,
+        "LOC": 0.7492
+      },
+      "epoch_seconds": 3611.9
+    },
+    {
+      "epoch": 2,
+      "train_loss": 3.5124,
+      "dev_precision": 0.7417,
+      "dev_recall": 0.7244,
+      "dev_f1": 0.733,
+      "dev_per_type_f1": {
+        "PER": 0.7742,
+        "ORG": 0.6239,
+        "LOC": 0.7903
+      },
+      "epoch_seconds": 2090.5
+    },
+    {
+      "epoch": 3,
+      "train_loss": 3.0811,
+      "dev_precision": 0.7454,
+      "dev_recall": 0.736,
+      "dev_f1": 0.7407,
+      "dev_per_type_f1": {
+        "PER": 0.7812,
+        "ORG": 0.636,
+        "LOC": 0.794
+      },
+      "epoch_seconds": 1380.0
+    },
+    {
+      "epoch": 4,
+      "train_loss": 2.8471,
+      "dev_precision": 0.7539,
+      "dev_recall": 0.7455,
+      "dev_f1": 0.7497,
+      "dev_per_type_f1": {
+        "PER": 0.7881,
+        "ORG": 0.6498,
+        "LOC": 0.7974
+      },
+      "epoch_seconds": 1501.1
+    },
+    {
+      "epoch": 5,
+      "train_loss": 2.6991,
+      "dev_precision": 0.7565,
+      "dev_recall": 0.7538,
+      "dev_f1": 0.7551,
+      "dev_per_type_f1": {
+        "PER": 0.7924,
+        "ORG": 0.6567,
+        "LOC": 0.805
+      },
+      "epoch_seconds": 2988.3
+    },
+    {
+      "epoch": 6,
+      "train_loss": 2.5883,
+      "dev_precision": 0.7553,
+      "dev_recall": 0.7502,
+      "dev_f1": 0.7528,
+      "dev_per_type_f1": {
+        "PER": 0.7892,
+        "ORG": 0.656,
+        "LOC": 0.8023
+      },
+      "epoch_seconds": 2949.0
+    },
+    {
+      "epoch": 7,
+      "train_loss": 2.4954,
+      "dev_precision": 0.7594,
+      "dev_recall": 0.7544,
+      "dev_f1": 0.7569,
+      "dev_per_type_f1": {
+        "PER": 0.793,
+        "ORG": 0.6584,
+        "LOC": 0.8077
+      },
+      "epoch_seconds": 2379.1
+    },
+    {
+      "epoch": 8,
+      "train_loss": 2.4127,
+      "dev_precision": 0.7574,
+      "dev_recall": 0.7518,
+      "dev_f1": 0.7545,
+      "dev_per_type_f1": {
+        "PER": 0.7938,
+        "ORG": 0.6533,
+        "LOC": 0.8043
+      },
+      "epoch_seconds": 2352.2
+    }
+  ],
+  "best_epoch": 7,
+  "best_dev_f1": 0.7569
+}

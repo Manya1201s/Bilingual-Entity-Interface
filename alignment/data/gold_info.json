@@ -1,0 +1,63 @@
+{
+  "method": "Source sentences: the held-out MT splits mt/data/<lang>/{validation,test}.jsonl\n(never used to train the MT models; Indic sides that occur in the NER data\nwere removed when the MT data was built). validation = tuning, test = final.",
+  "ner_model": "models/english_ner_scratch (no aliases)",
+  "knowledge_base": "English Wikipedia titles/redirects -> Wikidata (CC0) Hindi/Marathi labels + aliases",
+  "splits": {
+    "hi/validation": {
+      "pairs": 1000,
+      "english_mentions": 1211,
+      "not_a_wikipedia_article": 445,
+      "no_hi_label": 99,
+      "label_not_in_target": 286,
+      "gold_items": 381,
+      "items_with_multiple_gold_spans": 22,
+      "by_type": {
+        "LOC": 173,
+        "ORG": 86,
+        "PER": 122
+      }
+    },
+    "hi/test": {
+      "pairs": 1000,
+      "english_mentions": 1129,
+      "not_a_wikipedia_article": 402,
+      "no_hi_label": 100,
+      "label_not_in_target": 269,
+      "gold_items": 358,
+      "items_with_multiple_gold_spans": 25,
+      "by_type": {
+        "LOC": 178,
+        "PER": 100,
+        "ORG": 80
+      }
+    },
+    "mr/validation": {
+      "pairs": 1000,
+      "english_mentions": 754,
+      "not_a_wikipedia_article": 212,
+      "no_mr_label": 120,
+      "label_not_in_target": 233,
+      "gold_items": 189,
+      "items_with_multiple_gold_spans": 7,
+      "by_type": {
+        "ORG": 39,
+        "LOC": 90,
+        "PER": 60
+      }
+    },
+    "mr/test": {
+      "pairs": 1000,
+      "english_mentions": 777,
+      "not_a_wikipedia_article": 230,
+      "no_mr_label": 102,
+      "label_not_in_target": 222,
+      "gold_items": 223,
+      "items_with_multiple_gold_spans": 8,
+      "by_type": {
+        "LOC": 103,
+        "PER": 86,
+        "ORG": 34
+      }
+    }
+  }
+}

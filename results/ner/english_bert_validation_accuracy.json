@@ -1,0 +1,13 @@
+{
+  "model": "English BERT",
+  "model_dir": "models/english_ner",
+  "method": "bert-base-cased fine-tuned for token classification (reference experiment)",
+  "split": "validation",
+  "dataset": "training/data/english/validation.jsonl",
+  "dataset_name": "CoNLL-2003 validation (MISC -> O)",
+  "metric": "token-level accuracy (predicted BIO tag == reference BIO tag)",
+  "correct_tokens": 50979,
+  "total_tokens": 51360,
+  "accuracy": 0.9926,
+  "note": "Validation split, not the held-out test set. Token-level accuracy is not entity-level F1: 44,025 of the 51,360 validation tokens are O, so an all-O tagger would already score 85.7%."
+}

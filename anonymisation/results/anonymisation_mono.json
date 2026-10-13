@@ -1,0 +1,491 @@
+{
+  "en": {
+    "language": "en",
+    "test_set": "training/data/english/test.jsonl",
+    "counts": {
+      "sentences": 3453,
+      "gold_entities": 4946,
+      "gold_entity_tokens": 7194,
+      "residual_tokens": 956,
+      "missed_entities": 655,
+      "partial_entities": 88,
+      "anonymised_tokens": 6984,
+      "false_positive_tokens": 746,
+      "ner_covered_entities": 4291,
+      "wrong_type_entities": 595,
+      "non_entity_tokens": 39233,
+      "non_entity_changed": 746
+    },
+    "metrics": {
+      "residual_identifier_rate": 0.1329,
+      "missed_anonymisation_rate": 0.1324,
+      "partial_anonymisation_rate": 0.0178,
+      "false_positive_rate": 0.1068,
+      "incorrect_anonymisation_rate": 0.1387,
+      "non_entity_preservation": 0.981,
+      "identity_consistency": {
+        "entity_texts_with_multiple_placeholders": 0,
+        "placeholders_shared_by_different_texts": 0,
+        "distinct_entities": 2420
+      }
+    },
+    "examples": {
+      "missed": [
+        {
+          "entity": "JAPAN",
+          "type": "LOC",
+          "sentence": "SOCCER - JAPAN GET LUCKY WIN , CHINA IN SURPRISE DEFEAT ."
+        },
+        {
+          "entity": "AL-AIN",
+          "type": "LOC",
+          "sentence": "AL-AIN , United Arab Emirates 1996-12-06"
+        },
+        {
+          "entity": "Bitar",
+          "type": "PER",
+          "sentence": "Bitar pulled off fine saves whenever they did ."
+        },
+        {
+          "entity": "ITALY",
+          "type": "LOC",
+          "sentence": "RUGBY UNION - CUTTITTA BACK FOR ITALY AFTER A YEAR ."
+        },
+        {
+          "entity": "ROME",
+          "type": "LOC",
+          "sentence": "ROME 1996-12-06"
+        },
+        {
+          "entity": "Coste",
+          "type": "PER",
+          "sentence": "Coste said he had approached the player two months ago about a comeback ."
+        },
+        {
+          "entity": "AL-AIN",
+          "type": "LOC",
+          "sentence": "AL-AIN , United Arab Emirates 1996-12-06"
+        },
+        {
+          "entity": "Louay Taleb",
+          "type": "PER",
+          "sentence": "Syria : 24 - Salem Bitar , 3 - Bachar Srour ; 4 - Hassan Abbas , 5 - Tarek Jabban , 6 - Ammar Awad -LPR- 9 - Louay Taleb 69 -RPR- , 8 - Nihad al-Boushi , 10 - Mohammed Afash , 12 - Ali Dib , 13 - Abdul Latif Helou -LPR- 17 - Ammar Rihawiy 46 -RPR- , 14 - Khaled Zaher ; 16 - Nader Jokhadar ."
+        }
+      ],
+      "false_positive": [
+        {
+          "token": "Uzbek",
+          "sentence": "China controlled most of the match and saw several chances missed until the 78th minute when Uzbek striker Igor Shkvyrin took advantage of a misdirected defensive header to lob the ball over the advancing Chinese keeper and into an empty net ."
+        },
+        {
+          "token": "Defender",
+          "sentence": "Defender Hassan Abbas rose to intercept a long ball into the area in the 84th minute but only managed to divert it into the top corner of Bitar 's goal ."
+        },
+        {
+          "token": "LATE",
+          "sentence": "SOCCER - LATE GOALS GIVE JAPAN WIN OVER SYRIA ."
+        },
+        {
+          "token": "Defender",
+          "sentence": "Defender Hassan Abbas rose to intercept a long ball into the area in the 84th minute but only managed to divert it into the top corner of Bitar 's goal ."
+        },
+        {
+          "token": "-LPR-",
+          "sentence": "Japan : 19 - Kenichi Shimokawa , 2 - Hiroshige Yanagimoto , 3 - Naoki Soma , 4 - Masami Ihara , 5 - Norio Omura , 6 - Motohiro Yamaguchi , 8 - Masakiyo Maezono -LPR- 7 - Yasuto Honda 71 -RPR- , 9 - Takuya Takagi , 10 - Hiroshi Nanami , 11 - Kazuyoshi Miura , 15 - Hiroaki Morishima -LPR- 14 - Masayuki Okano 75 -RPR- ."
+        },
+        {
+          "token": "-LPR-",
+          "sentence": "Syria : 24 - Salem Bitar , 3 - Bachar Srour ; 4 - Hassan Abbas , 5 - Tarek Jabban , 6 - Ammar Awad -LPR- 9 - Louay Taleb 69 -RPR- , 8 - Nihad al-Boushi , 10 - Mohammed Afash , 12 - Ali Dib , 13 - Abdul Latif Helou -LPR- 17 - Ammar Rihawiy 46 -RPR- , 14 - Khaled Zaher ; 16 - Nader Jokhadar ."
+        },
+        {
+          "token": "-LPR-",
+          "sentence": "Syria : 24 - Salem Bitar , 3 - Bachar Srour ; 4 - Hassan Abbas , 5 - Tarek Jabban , 6 - Ammar Awad -LPR- 9 - Louay Taleb 69 -RPR- , 8 - Nihad al-Boushi , 10 - Mohammed Afash , 12 - Ali Dib , 13 - Abdul Latif Helou -LPR- 17 - Ammar Rihawiy 46 -RPR- , 14 - Khaled Zaher ; 16 - Nader Jokhadar ."
+        },
+        {
+          "token": "-LPR-",
+          "sentence": "2. Andrei Ivanov -LPR- Russia -RPR- 24.88"
+        }
+      ],
+      "wrong_type": [
+        {
+          "entity": "United Arab Emirates",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "Uzbekistan",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "Uzbekistan",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "Hiroshige Yanagimoto",
+          "gold": "PER",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "Bitar",
+          "gold": "PER",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "JAPAN",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "SYRIA",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "United Arab Emirates",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        }
+      ]
+    },
+    "synthetic_identifiers": {
+      "recall_by_type": {
+        "EMAIL": 1.0,
+        "URL": 1.0,
+        "PHONE": 1.0,
+        "AADHAAR": 1.0,
+        "PAN": 1.0
+      },
+      "items": 200,
+      "negative_controls": 3,
+      "negative_controls_wrongly_anonymised": 0
+    }
+  },
+  "hi": {
+    "language": "hi",
+    "test_set": "training/data/hindi/test.jsonl",
+    "counts": {
+      "sentences": 864,
+      "gold_entities": 1929,
+      "gold_entity_tokens": 3380,
+      "residual_tokens": 329,
+      "missed_entities": 132,
+      "partial_entities": 84,
+      "anonymised_tokens": 3514,
+      "false_positive_tokens": 463,
+      "ner_covered_entities": 1797,
+      "wrong_type_entities": 81,
+      "non_entity_tokens": 16513,
+      "non_entity_changed": 463
+    },
+    "metrics": {
+      "residual_identifier_rate": 0.0973,
+      "missed_anonymisation_rate": 0.0684,
+      "partial_anonymisation_rate": 0.0435,
+      "false_positive_rate": 0.1318,
+      "incorrect_anonymisation_rate": 0.0451,
+      "non_entity_preservation": 0.972,
+      "identity_consistency": {
+        "entity_texts_with_multiple_placeholders": 0,
+        "placeholders_shared_by_different_texts": 0,
+        "distinct_entities": 1516
+      }
+    },
+    "examples": {
+      "missed": [
+        {
+          "entity": "पूर्व एशिया",
+          "type": "LOC",
+          "sentence": "सरकार ने नवम्बर , 2007 में सिंगापुर में आसियान - भारत और पूर्व एशिया शिखर सम्मेलनों में भाग लेकर अपनी"
+        },
+        {
+          "entity": "राष्ट्रीय स्वच्छ विद्यालय",
+          "type": "ORG",
+          "sentence": "चार राज्यों ( पुड्डुचेरी , तमिलनाडु , गुजरात और आंध्र प्रदेश ) तथा नौ जिलों ( पुड्डुचेरी , श्रीकाकुलम , चंडीगढ़ , हिसार , कराईकल , लातूर , नेल्लोर , दक्षिण गोवा , वड़ोदरा ) को राष्ट्रीय स्वच्छ विद्यालय पुरस्कार से अधिक संख्या में पुरस्कृत स्कूलों के लिए मान्यता प्रमाण पत्र दिए जाएंगे ।"
+        },
+        {
+          "entity": "मोहम्मदVI",
+          "type": "PER",
+          "sentence": "भारत के राष्ट्रपति , श्री प्रणब मुखर्जी ने महामहिम किंग मोहम्मदVI के राज्याभिषेक की वर्षगांठ ( 30जुलाई , 2016 ) की पूर्व संध्या पर मोरक्को के किंग और जनता को बधाई और शुभकामनाएं दी हैं ।"
+        },
+        {
+          "entity": "केंद्रीय पर्यावरण",
+          "type": "ORG",
+          "sentence": "सुल्ताना ने कहा कि पंजाब सरकार को बड़ी सड़क परियोजनाओं का निर्माण कार्य आगे बढ़ाने के लिए केंद्रीय पर्यावरण मंत्री एवं वन मंत्रालय की अनुमति मिल चुकी है ।"
+        },
+        {
+          "entity": "शिकांगों",
+          "type": "LOC",
+          "sentence": "उन्हेनें शिकांगों में बोरोडिन की पत्नी को तथा वाशिंगटन में रूसी व्यापार संघ को पैसे भेजे ।"
+        },
+        {
+          "entity": "श्री",
+          "type": "PER",
+          "sentence": "विश्व की सबसे बड़ी राष्ट्र निर्माण डिजिटल पहल स्मार्ट इंडिया हैकथन - 2017 बेहद सफल रही थी - श्री प्रकाश जावड़ेकर"
+        },
+        {
+          "entity": "पंचायत",
+          "type": "LOC",
+          "sentence": "ग्राम सभा का मतलब है कि व्यक्तियों के एक ऐसा समूह , जो गांव की सतह पर पंचायत क्षेत्र के अंदर गांव से संबंधित चुनावी सूची में पंजीकृत हो ."
+        },
+        {
+          "entity": "नेस्डैक",
+          "type": "ORG",
+          "sentence": "नेस्डैक में शेयरों के उछाल की अनुक्रिया भारत में होती है ।"
+        }
+      ],
+      "false_positive": [
+        {
+          "token": "-",
+          "sentence": "सरकार ने नवम्बर , 2007 में सिंगापुर में आसियान - भारत और पूर्व एशिया शिखर सम्मेलनों में भाग लेकर अपनी"
+        },
+        {
+          "token": "लुक",
+          "sentence": "लुक ईस्ट पॉलिसी"
+        },
+        {
+          "token": "ईस्ट",
+          "sentence": "लुक ईस्ट पॉलिसी"
+        },
+        {
+          "token": "पॉलिसी",
+          "sentence": "लुक ईस्ट पॉलिसी"
+        },
+        {
+          "token": "जेल",
+          "sentence": "इस दौरान हाफिज सईद को कोट लखपत जेल से कड़ी सुरक्षा के बीच कोर्ट लाया गया ."
+        },
+        {
+          "token": "भारत",
+          "sentence": "सिवानी ( Siwani ) भारत के हरियाणा राज्य के भिवानी ज़िले में स्थित एक नगर व नगरपालिका है ।"
+        },
+        {
+          "token": "सलाम",
+          "sentence": "यह सलाम दरअसल कालेज की यूनिफार्म को था ।"
+        },
+        {
+          "token": "दरअसल",
+          "sentence": "यह सलाम दरअसल कालेज की यूनिफार्म को था ।"
+        }
+      ],
+      "wrong_type": [
+        {
+          "entity": "गुजरात हाईकोर्ट",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "पंजाब सरकार",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "सिंदरी",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "सुंदरबनी",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "जॉनसन",
+          "gold": "PER",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "6 सीजीओ काम्प्लेक्स",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "एसए बोबडे",
+          "gold": "PER",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "जम्मू - कश्मीर",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        }
+      ]
+    },
+    "synthetic_identifiers": {
+      "recall_by_type": {
+        "EMAIL": 1.0,
+        "URL": 1.0,
+        "PHONE": 1.0,
+        "AADHAAR": 1.0,
+        "PAN": 1.0
+      },
+      "items": 200,
+      "negative_controls": 3,
+      "negative_controls_wrongly_anonymised": 0
+    }
+  },
+  "mr": {
+    "language": "mr",
+    "test_set": "training/data/marathi/test.jsonl",
+    "counts": {
+      "sentences": 1060,
+      "gold_entities": 1676,
+      "gold_entity_tokens": 2600,
+      "residual_tokens": 366,
+      "missed_entities": 201,
+      "partial_entities": 64,
+      "anonymised_tokens": 2434,
+      "false_positive_tokens": 200,
+      "ner_covered_entities": 1475,
+      "wrong_type_entities": 57,
+      "non_entity_tokens": 9233,
+      "non_entity_changed": 200
+    },
+    "metrics": {
+      "residual_identifier_rate": 0.1408,
+      "missed_anonymisation_rate": 0.1199,
+      "partial_anonymisation_rate": 0.0382,
+      "false_positive_rate": 0.0822,
+      "incorrect_anonymisation_rate": 0.0386,
+      "non_entity_preservation": 0.9783,
+      "identity_consistency": {
+        "entity_texts_with_multiple_placeholders": 0,
+        "placeholders_shared_by_different_texts": 0,
+        "distinct_entities": 1058
+      }
+    },
+    "examples": {
+      "missed": [
+        {
+          "entity": "केंद्रीय",
+          "type": "ORG",
+          "sentence": "राष्ट्रवादीचे सर्वेसर्वा व माजी केंद्रीय कृषीमंत्री शरद पवार अखेर आ ."
+        },
+        {
+          "entity": "हरित तंत्रज्ञान",
+          "type": "ORG",
+          "sentence": "चालू वर्षात ( 27 सप्टेंबर 2017 पर्यंत ) सुमारे 2,484 किलोमीटर लांबीचे रस्ते हरित तंत्रज्ञान वापरून बांधण्यात आले आहेत"
+        },
+        {
+          "entity": "नवी दिल्ली",
+          "type": "LOC",
+          "sentence": "दिल्ली विधानसभा निवडणुकीत मुख्यमंत्री आणि आम आदमी पक्षाचे संयोजक अरविंद केजरीवाल यांनी नवी दिल्ली जागेवर आघाडी घेतली आहे ."
+        },
+        {
+          "entity": "रशियाचे",
+          "type": "LOC",
+          "sentence": "या वेळी रशियाचे अध्यक्ष व्लादिमीर पुतिन आणि ऑस्ट्रिया आणि मोलदोव्हा या देशांचे नेते व्यासपीठावर हजर होते ."
+        },
+        {
+          "entity": "कौशल्य विकास आणि उद्यमशीलता",
+          "type": "ORG",
+          "sentence": "सामाजिक न्याय आणि सक्षमीकरण मंत्री थावरचंद गेहलोत यांनी या कार्यक्रमाचे उद्घाटन केले . कौशल्य विकास आणि उद्यमशीलता मंत्री धर्मेंद्र प्रधान प्रमुख पाहुणे होते ."
+        },
+        {
+          "entity": "बजरंग",
+          "type": "PER",
+          "sentence": "विनेश व साक्षी सध्या राष्ट्रीय शिबिरात आहेत तर बजरंग जॉर्जियामध्ये आपल्या खासगी प्रशिक्षकासोबत आहे ."
+        },
+        {
+          "entity": "भारतीय",
+          "type": "LOC",
+          "sentence": "लंडन - भारतीय वंशाच्या महिला खासदार प्रीती पटेल यांची ब्रिटनचे नवे पंतप्रधान बोरिस जॉन्सन यांच्या मंत्रिमंडळामध्ये गृहमंत्रिपदी नियुक्ती करण्यात आली आहे ."
+        },
+        {
+          "entity": "आशियाई",
+          "type": "LOC",
+          "sentence": "आशियाई सुवर्णपदक विजेते हकम सिंग यांचे निधन"
+        }
+      ],
+      "false_positive": [
+        {
+          "token": "माहिम",
+          "sentence": "माहिम पोलीस अधिक तपास करत आहेत ."
+        },
+        {
+          "token": "पोलीस",
+          "sentence": "माहिम पोलीस अधिक तपास करत आहेत ."
+        },
+        {
+          "token": "बिहान",
+          "sentence": "बिहान बाजार आऊटलेट"
+        },
+        {
+          "token": "अर्थ",
+          "sentence": "राष्ट्रवादीचे जयंत पाटील यांच्याकडे अर्थ आणि नियोजन , गृहनिर्माण , अन्न व पुरवठा आणि श्रम मंत्रालय देण्यात आले आहे ."
+        },
+        {
+          "token": "आणि",
+          "sentence": "राष्ट्रवादीचे जयंत पाटील यांच्याकडे अर्थ आणि नियोजन , गृहनिर्माण , अन्न व पुरवठा आणि श्रम मंत्रालय देण्यात आले आहे ."
+        },
+        {
+          "token": "नियोजन",
+          "sentence": "राष्ट्रवादीचे जयंत पाटील यांच्याकडे अर्थ आणि नियोजन , गृहनिर्माण , अन्न व पुरवठा आणि श्रम मंत्रालय देण्यात आले आहे ."
+        },
+        {
+          "token": "अन्न",
+          "sentence": "राष्ट्रवादीचे जयंत पाटील यांच्याकडे अर्थ आणि नियोजन , गृहनिर्माण , अन्न व पुरवठा आणि श्रम मंत्रालय देण्यात आले आहे ."
+        },
+        {
+          "token": "व",
+          "sentence": "राष्ट्रवादीचे जयंत पाटील यांच्याकडे अर्थ आणि नियोजन , गृहनिर्माण , अन्न व पुरवठा आणि श्रम मंत्रालय देण्यात आले आहे ."
+        }
+      ],
+      "wrong_type": [
+        {
+          "entity": "उल्हासनगर रेल्वे स्थानक",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "रिकार्डोने",
+          "gold": "PER",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "आफ्रिका संघ",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "तेलंगणात",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        },
+        {
+          "entity": "मोलदोव्हा",
+          "gold": "LOC",
+          "placeholder_type": "PER"
+        },
+        {
+          "entity": "राणा",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "दिल्ली",
+          "gold": "LOC",
+          "placeholder_type": "ORG"
+        },
+        {
+          "entity": "दिल्ली विधानसभा",
+          "gold": "ORG",
+          "placeholder_type": "LOC"
+        }
+      ]
+    },
+    "synthetic_identifiers": {
+      "recall_by_type": {
+        "EMAIL": 1.0,
+        "URL": 1.0,
+        "PHONE": 1.0,
+        "AADHAAR": 1.0,
+        "PAN": 1.0
+      },
+      "items": 200,
+      "negative_controls": 3,
+      "negative_controls_wrongly_anonymised": 0
+    }
+  }
+}

@@ -1,0 +1,14 @@
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 13580.42it/s]
+loaded ai4bharat/IndicNER | fast tokenizer: True | labels: {0: 'B-LOC', 1: 'B-ORG', 2: 'B-PER', 3: 'I-LOC', 4: 'I-ORG', 5: 'I-PER', 6: 'O'} | parameters: 166,771,207
+
+[hindi] 864 sentences scored, 1929 gold entities, 69s, stats {'truncated_sentences': 0, 'words_without_subword': 0}
+  IndicNER : P 0.8059 R 0.8523 F1 0.8284 | PER 0.8983 ORG 0.7377 LOC 0.8186 | 95% CI (0.8092, 0.8471)
+  Ours     : P 0.7895 R 0.8051 F1 0.7972 | PER 0.8421 ORG 0.7287 LOC 0.7978 | 95% CI (0.778, 0.8174)
+  Ours - IndicNER = -0.0312  paired-bootstrap 95% CI (-0.0472, -0.0161)  (ours better in 0% of resamples)
+
+[marathi] 1060 sentences scored, 1676 gold entities, 56s, stats {'truncated_sentences': 0, 'words_without_subword': 0}
+  IndicNER : P 0.8261 R 0.7852 F1 0.8051 | PER 0.8706 ORG 0.6590 LOC 0.8264 | 95% CI (0.7834, 0.8259)
+  Ours     : P 0.8259 R 0.7643 F1 0.7939 | PER 0.8660 ORG 0.6595 LOC 0.7945 | 95% CI (0.774, 0.8142)
+  Ours - IndicNER = -0.0112  paired-bootstrap 95% CI (-0.0264, 0.0046)  (ours better in 9% of resamples)
+
+written C:\Users\manya\AppData\Local\Temp\claude\c--Users-manya-OneDrive-Desktop-Bilingual-Entity-Interface\1cbad21c-4d25-4920-907b-ab7ce6efea27\scratchpad\indicner_eval\indicner_results.json
