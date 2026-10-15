@@ -9,6 +9,9 @@ import pandas as pd
 import streamlit as st
 
 from ui_style import APP_CSS
+from sentence_generation import (
+    ENTITY_TYPES, build_docx, build_txt, entity_key, generate_sentences,
+)
 
 # Technical details (exceptions, missing files) go to the log; the page
 # shows a short explanation.
@@ -1243,7 +1246,8 @@ def read_excel_bytes(raw: bytes, filename: str) -> Dict[str, pd.DataFrame]:
 def clear_prepared_input():
     """Forget prepared sentences and results of sections 01-03 (failed or
     changed input). Entity Alignment has its own input and results."""
-    for key in ("sentences", "sentence_origins", "ner_results"):
+    for key in ("sentences", "sentence_origins", "ner_results",
+                "generated_sentences"):
         st.session_state.pop(key, None)
 
 
@@ -1622,6 +1626,137 @@ def render_alignment(bilingual):
             f"and found {test['hi']['match']['recall']:.1%} and "
             f"{test['mr']['match']['recall']:.1%} of the true pairs."
         )
+
+
+ENTITY_TYPE_NAMES = {"PER": "person", "ORG": "organization", "LOC": "location"}
+
+
+def highlighted(sentence: str, start: int, end: int) -> str:
+    """Markdown for `sentence` with characters start..end highlighted."""
+    return (
+        escape_markdown(sentence[:start])
+        + f"**:orange-background[{escape_markdown(sentence[start:end])}]**"
+        + escape_markdown(sentence[end:])
+    )
+
+
+def render_sentence_generation(rows):
+    """
+    Generate New Sentences: replace extracted entities (from the existing
+    NER results) with new entities of the same type, one new sentence per
+    replacement. Logic in sentence_generation.py.
+    """
+    st.divider()
+    st.header("Generate New Sentences")
+    st.caption(
+        "Replace an extracted entity with a new entity of the same type. Each "
+        "replacement creates one new sentence; the rest of the sentence stays "
+        "exactly as it is. Leave a field empty to skip that entity."
+    )
+
+    by_sentence = {}
+    for row in rows:
+        by_sentence.setdefault(row["Sentence No."], []).append(row)
+
+    def field_key(row):
+        return f"gen_{entity_key(row)}_{row['Entity']}"
+
+    for position, (number, sentence_rows) in enumerate(sorted(by_sentence.items())):
+        sentence = sentence_rows[0]["Sentence"]
+
+        with st.expander(f"Sentence {number}: {escape_markdown(sentence)}",
+                         expanded=position == 0):
+            for entity_type in ENTITY_TYPES:
+                typed = sorted(
+                    (r for r in sentence_rows if r["Entity Type"] == entity_type),
+                    key=lambda r: r["Start"],
+                )
+                if not typed:
+                    continue
+
+                st.markdown(f"**{entity_type}** · {ENTITY_TYPE_NAMES[entity_type]}")
+                for row in typed:
+                    st.text_input(
+                        f"Replace “{row['Entity']}” with",
+                        key=field_key(row),
+                        placeholder=f"New {ENTITY_TYPE_NAMES[entity_type]}",
+                    )
+
+    if st.button(
+        "Generate New Sentences",
+        type="primary",
+        key="generate_sentences",
+        icon=":material/auto_awesome:",
+    ):
+        replacements = {
+            entity_key(row): st.session_state.get(field_key(row), "")
+            for row in rows
+        }
+
+        try:
+            generated = generate_sentences(rows, replacements)
+        except ValueError:
+            LOGGER.exception("Sentence generation failed")
+            generated = None
+            st.error(
+                "New sentences could not be generated because the extracted "
+                "entities no longer match the sentences. Extract the entities "
+                "again and retry."
+            )
+
+        if generated == []:
+            st.warning(
+                "Enter at least one replacement that differs from the "
+                "original entity."
+            )
+
+        st.session_state["generated_sentences"] = generated or None
+
+    generated = st.session_state.get("generated_sentences")
+
+    if not generated:
+        return
+
+    st.success(f"Generated {plural(len(generated), 'new sentence')}.")
+    current = None
+
+    for item in generated:
+        if item["Original Sentence"] != current:
+            current = item["Original Sentence"]
+            st.markdown(f"**Original:** {escape_markdown(current)}")
+
+        st.markdown(
+            f"- `{item['Entity Type']}` {escape_markdown(item['Original Entity'])} "
+            f"→ {escape_markdown(item['Replacement'])}: "
+            + highlighted(item["Generated Sentence"], item["Start"], item["End"])
+        )
+
+    with st.expander("Generated Sentences Table"):
+        st.dataframe(
+            pd.DataFrame(generated).drop(columns=["Start", "End"]),
+            width="stretch",
+            hide_index=True,
+        )
+
+    word_col, text_col = st.columns(2)
+    word_col.download_button(
+        "Download Sentences (Word)",
+        build_docx(generated),
+        "generated_sentences.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        key="download_generated_docx",
+        icon=":material/download:",
+        width="stretch",
+    )
+    text_col.download_button(
+        "Download Sentences (TXT)",
+        build_txt(generated).encode("utf-8"),
+        "generated_sentences.txt",
+        "text/plain",
+        key="download_generated_txt",
+        icon=":material/download:",
+        width="stretch",
+    )
 
 
 # ============================================================
@@ -2146,6 +2281,8 @@ with monolingual_tab:
                             ]
 
                         st.session_state["ner_results"] = ner_rows
+                        # New entities: earlier generated sentences are stale.
+                        st.session_state.pop("generated_sentences", None)
                         st.session_state["used_model"] = (
                             model_label(language)
                             if language in TRAINED_MODELS
@@ -2239,6 +2376,9 @@ with monolingual_tab:
                     "*Configured alias — review* means it was found only through "
                     "the alias list (shown as 1.0); please check these entries."
                 )
+
+            if rows:
+                render_sentence_generation(rows)
 
 
 with bilingual_tab:

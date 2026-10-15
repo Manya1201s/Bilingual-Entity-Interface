@@ -109,8 +109,10 @@ check("the existing monolingual workflow runs (Manya PER, NOIDA LOC)",
       ner is not None and {("Manya", "PER"), ("NOIDA", "LOC")} <= set(
           zip(ner["Entity"], ner["Entity Type"])),
       None if ner is None else ner[["Entity", "Entity Type"]].values.tolist())
-check("monolingual tab now also shows 02 · Sentence Preview and 03 · Entity Extraction",
-      tab_headers(at, MONO) == ["01 · Input", "02 · Sentence Preview", "03 · Entity Extraction"],
+check("monolingual tab now also shows 02 · Sentence Preview, 03 · Entity Extraction "
+      "and Generate New Sentences",
+      tab_headers(at, MONO) == ["01 · Input", "02 · Sentence Preview", "03 · Entity Extraction",
+                                "Generate New Sentences"],
       tab_headers(at, MONO))
 
 print(f"\nRESULT: {passes} passed, {len(failures)} failed")

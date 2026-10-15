@@ -40,6 +40,7 @@ Then open http://localhost:8501. The first NER run downloads the model
 .venv\Scripts\python tests\test_excel.py
 .venv\Scripts\python tests\test_input_source.py
 .venv\Scripts\python tests\test_navigation.py
+.venv\Scripts\python tests\test_generation.py
 ```
 
 - `test_input_source.py` checks that an uploaded document always takes
@@ -341,6 +342,19 @@ Baseline XLM-R (Auto Detect route):
 - The sentence preview names the model that will be used, shows the
   detected script, and warns if the choice clearly contradicts the text
   (e.g. English selected for Devanagari text).
+
+### G. Generate New Sentences (Monolingual NER Extraction)
+- After entity extraction, each sentence's entities are listed by type
+  (PER, ORG, LOC) with a replacement field. "Generate New Sentences"
+  creates one new sentence per filled-in replacement; empty fields (and
+  replacements equal to the original) are skipped.
+- Replacement uses the entity's character offsets from the NER results, so
+  only that occurrence changes; other text, punctuation, spacing and
+  repeated words stay as they are. Works for English, Hindi and Marathi.
+- The replaced entity is highlighted; results download as Word (.docx,
+  replacement bold and highlighted) or TXT. Logic: `sentence_generation.py`.
+- Only entities the NER model found can be replaced (e.g. if the model
+  misses "Infosys", there is no field for it).
 
 ### F. Entity alignment (section 04)
 - After NER on both sentences, `alignment/entity_pairs.py` pairs English
